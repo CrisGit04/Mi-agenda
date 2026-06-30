@@ -91,11 +91,19 @@
   #status-bar{ font-size:12px; color:var(--text-muted); margin-bottom:1rem; display:flex; align-items:center; gap:6px; }
   #status-dot{ width:7px; height:7px; border-radius:50%; background:var(--text-muted); }
   #status-dot.online{ background:var(--success); }
+  #edit-toast{
+    position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-20px);
+    background:var(--accent); color:var(--surface-2); padding:10px 18px; border-radius:999px;
+    font-size:13px; font-weight:500; opacity:0; pointer-events:none; transition:all 0.25s; z-index:999;
+    box-shadow:0 4px 16px rgba(0,0,0,0.25);
+  }
+  #edit-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
 
 <h1><i class="ti ti-calendar" style="vertical-align:-3px; margin-right:6px;"></i>Agenda semanal</h1>
+<div id="edit-toast">Editando tarea ↑</div>
 <div id="status-bar"><span id="status-dot"></span><span id="status-text">Conectando...</span></div>
 
 <div class="card">
@@ -247,6 +255,7 @@ function taskCard(t){
       <div style="display:flex; gap:2px;">
         <button class="icon-btn" data-edit="${t.id}" type="button" aria-label="Editar tarea">✎</button>
         <button class="icon-btn" data-complete="${t.id}" type="button" aria-label="Completar tarea">✓</button>
+        <button class="icon-btn" data-delete="${t.id}" type="button" aria-label="Eliminar tarea">🗑</button>
       </div>
     </div>
     <div class="meta">
@@ -340,6 +349,15 @@ function restoreTask(id){
   render(); persist();
 }
 
+function deleteTask(id){
+  const t = tasks.find(x => x.id === id);
+  if(!t) return;
+  const ok = window.confirm(`¿Eliminar "${t.name}" definitivamente?`);
+  if(!ok) return;
+  tasks = tasks.filter(x => x.id !== id);
+  render(); persist();
+}
+
 function startEdit(id){
   const t = tasks.find(x => x.id === id);
   if(!t) return;
@@ -358,7 +376,13 @@ function startEdit(id){
   recLabel.style.opacity = t.recurringId ? '0.5' : '1';
   recLabel.style.pointerEvents = t.recurringId ? 'none' : 'auto';
   const card = document.querySelector('.card');
-  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const toast = document.getElementById('edit-toast');
+  toast.textContent = `Editando: ${t.name}`;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2000);
+  const rect = card.getBoundingClientRect();
+  const targetY = window.pageYOffset + rect.top - 16;
+  window.scrollTo({ top: targetY, behavior: 'smooth' });
   card.style.transition = 'box-shadow 0.3s';
   card.style.boxShadow = '0 0 0 2px var(--accent)';
   setTimeout(() => { card.style.boxShadow = 'none'; }, 1200);
@@ -467,6 +491,8 @@ document.getElementById('history').addEventListener('click', (e) => {
 document.getElementById('matrix').addEventListener('click', (e) => {
   const completeBtn = e.target.closest('[data-complete]');
   if(completeBtn){ completeTask(completeBtn.getAttribute('data-complete')); return; }
+  const deleteBtn = e.target.closest('[data-delete]');
+  if(deleteBtn){ deleteTask(deleteBtn.getAttribute('data-delete')); return; }
   const editBtn = e.target.closest('[data-edit]');
   if(editBtn){ startEdit(editBtn.getAttribute('data-edit')); }
 });
