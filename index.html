@@ -62,6 +62,18 @@
   .badge{ font-size:11px; padding:2px 8px; border-radius:var(--radius); font-weight:500; }
   .icon-btn{ border:0.5px solid var(--border-strong); background:var(--surface-1); padding:4px 8px; height:auto; font-size:12px; display:inline-flex; align-items:center; gap:4px; }
   .week{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin-bottom:1.5rem; }
+  @media (max-width: 600px){
+    body{ padding:1rem; }
+    h1{ font-size:18px; }
+    .row-3{ grid-template-columns:1fr; }
+    .row-4{ grid-template-columns:1fr 1fr; }
+    .summary{ grid-template-columns:1fr 1fr; }
+    .matrix{ grid-template-columns:1fr; }
+    .week{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .task .top{ flex-wrap:wrap; }
+    .task .name{ width:100%; }
+    input, select, button{ font-size:16px; }
+  }
   .day{ background:var(--surface-1); border-radius:var(--radius); padding:8px 6px; min-height:60px; }
   .day p:first-child{ font-size:11px; font-weight:500; color:var(--text-secondary); margin:0 0 6px; }
   .day p:last-child{ font-size:18px; font-weight:500; margin:0; }
