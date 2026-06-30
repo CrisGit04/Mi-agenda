@@ -62,17 +62,18 @@
   .badge{ font-size:11px; padding:2px 8px; border-radius:var(--radius); font-weight:500; }
   .icon-btn{ border:0.5px solid var(--border-strong); background:var(--surface-1); padding:4px 8px; height:auto; font-size:12px; display:inline-flex; align-items:center; gap:4px; }
   .week{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin-bottom:1.5rem; }
-  @media (max-width: 600px){
+  @media (max-width: 700px){
     body{ padding:1rem; }
     h1{ font-size:18px; }
     .row-3{ grid-template-columns:1fr; }
     .row-4{ grid-template-columns:1fr 1fr; }
     .summary{ grid-template-columns:1fr 1fr; }
-    .matrix{ grid-template-columns:1fr; }
+    .matrix{ grid-template-columns:1fr !important; }
     .week{ grid-template-columns:repeat(4,minmax(0,1fr)); }
-    .task .top{ flex-wrap:wrap; }
-    .task .name{ width:100%; }
     input, select, button{ font-size:16px; }
+    .task .top{ align-items:center; }
+    .task .name{ flex:1; min-width:0; }
+    .icon-btn{ padding:6px 10px; font-size:16px; }
   }
   .day{ background:var(--surface-1); border-radius:var(--radius); padding:8px 6px; min-height:60px; }
   .day p:first-child{ font-size:11px; font-weight:500; color:var(--text-secondary); margin:0 0 6px; }
@@ -244,8 +245,8 @@ function taskCard(t){
     <div class="top">
       <p class="name">${t.recurringId ? '<i class="ti ti-repeat" style="font-size:12px; color:var(--text-muted); margin-right:3px;"></i>' : ''}${t.name}</p>
       <div style="display:flex; gap:2px;">
-        <button class="icon-btn" data-edit="${t.id}" type="button" aria-label="Editar"><i class="ti ti-edit"></i><span>Editar</span></button>
-        <button class="icon-btn" data-complete="${t.id}" type="button" aria-label="Completar"><i class="ti ti-check"></i><span>✓ Listo</span></button>
+        <button class="icon-btn" data-edit="${t.id}" type="button" aria-label="Editar tarea">✎</button>
+        <button class="icon-btn" data-complete="${t.id}" type="button" aria-label="Completar tarea">✓</button>
       </div>
     </div>
     <div class="meta">
@@ -298,7 +299,7 @@ function render(){
         <span style="font-size:13px; flex:1;">${r.name}</span>
         <span class="badge ${catClass[r.category]}" style="font-size:10px;">${catLabel[r.category]}</span>
         <span style="font-size:11px; color:var(--text-muted);">${r.days.map(d => d.slice(0,3)).join(', ')}</span>
-        <button class="icon-btn" data-remove-recurring="${r.id}" type="button" aria-label="Eliminar"><i class="ti ti-trash"></i><span>Eliminar</span></button>
+        <button class="icon-btn" data-remove-recurring="${r.id}" type="button" aria-label="Eliminar recurrencia">✕</button>
       </div>`).join('')
     : '<p style="font-size:12px; color:var(--text-muted);">Sin tareas recurrentes</p>';
 
