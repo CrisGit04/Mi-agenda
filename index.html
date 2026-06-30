@@ -305,7 +305,7 @@ function render(){
 
   document.getElementById('hist-count').textContent = history.length;
   document.getElementById('history').innerHTML = history.length
-    ? history.slice().reverse().map(t => `<div class="recur-row"><span style="font-size:12px; text-decoration:line-through; color:var(--text-muted); flex:1;">${t.name}</span><span class="badge ${catClass[t.category]}" style="font-size:10px;">${catLabel[t.category]}</span></div>`).join('')
+    ? history.slice().reverse().map(t => `<div class="recur-row"><span style="font-size:12px; text-decoration:line-through; color:var(--text-muted); flex:1;">${t.name}</span><span class="badge ${catClass[t.category]}" style="font-size:10px;">${catLabel[t.category]}</span><button class="icon-btn" data-restore="${t.id}" type="button" aria-label="Restaurar tarea">↺</button></div>`).join('')
     : '<p style="font-size:12px; color:var(--text-muted);">Vacío</p>';
 }
 
@@ -326,6 +326,17 @@ function completeTask(id){
 function removeRecurring(id){
   recurring = recurring.filter(r => r.id !== id);
   tasks = tasks.filter(t => t.recurringId !== id);
+  render(); persist();
+}
+
+function restoreTask(id){
+  const idx = history.findIndex(x => x.id === id);
+  if(idx === -1) return;
+  const t = history[idx];
+  history.splice(idx, 1);
+  delete t.completedAt;
+  t.completed = false;
+  tasks.push(t);
   render(); persist();
 }
 
@@ -440,6 +451,11 @@ document.getElementById('hist-toggle').addEventListener('click', () => {
 document.getElementById('hist-clear').addEventListener('click', () => {
   history = [];
   render(); persist();
+});
+
+document.getElementById('history').addEventListener('click', (e) => {
+  const restoreBtn = e.target.closest('[data-restore]');
+  if(restoreBtn){ restoreTask(restoreBtn.getAttribute('data-restore')); }
 });
 
 document.getElementById('matrix').addEventListener('click', (e) => {
