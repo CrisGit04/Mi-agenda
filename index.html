@@ -357,6 +357,12 @@ function startEdit(id){
   const recLabel = document.getElementById('recurring-label');
   recLabel.style.opacity = t.recurringId ? '0.5' : '1';
   recLabel.style.pointerEvents = t.recurringId ? 'none' : 'auto';
+  const card = document.querySelector('.card');
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  card.style.transition = 'box-shadow 0.3s';
+  card.style.boxShadow = '0 0 0 2px var(--accent)';
+  setTimeout(() => { card.style.boxShadow = 'none'; }, 1200);
+  document.getElementById('t-name').focus();
 }
 
 function resetForm(){
