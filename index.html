@@ -162,6 +162,7 @@
   </div>
 
   <div id="status-bar"><span id="status-dot"></span><span id="status-text">Conectando...</span></div>
+  <div id="plan-banner" style="display:flex; align-items:center; gap:8px; margin-bottom:1rem; padding:8px 12px; background:var(--surface-1); border-radius:var(--radius); border:0.5px solid var(--border);"></div>
 
   <div class="card">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
@@ -322,6 +323,9 @@ const days = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Doming
 let tasks=[], history=[], recurring=[], idCounter=1, recurIdCounter=1;
 let selectedRecurDays=[], editingTaskId=null, loaded=false, isRemoteUpdate=false, lastReset='';
 let currentDataRef=null, currentListener=null;
+let isPro=false;
+const FREE_LIMIT=10;
+const FLOW_LINK='https://www.flow.cl/uri/pMJpTv9aA';
 
 function quadrant(t){
   if(t.urgent && t.important) return 'q1';
@@ -349,7 +353,7 @@ function getWeekKey(){
 
 function persist(){
   if(isRemoteUpdate || !currentDataRef) return;
-  set(currentDataRef, { tasks, history, recurring, idCounter, recurIdCounter, lastReset });
+  set(currentDataRef, { tasks, history, recurring, idCounter, recurIdCounter, lastReset, isPro });
 }
 
 function ensureRecurringInstances(){
@@ -391,7 +395,16 @@ function taskCard(t){
 
 function render(){
   if(!loaded) return;
+  // Banner plan
   const pending=tasks.filter(t=>!t.completed);
+  const planBanner=document.getElementById('plan-banner');
+  if(isPro){
+    planBanner.innerHTML=`<span style="font-size:12px; color:var(--success);">✦ Weekli Pro activo — tareas ilimitadas</span>`;
+  } else {
+    const remaining=Math.max(0, FREE_LIMIT-pending.length);
+    planBanner.innerHTML=`<span style="font-size:12px; color:var(--text-muted);">Plan gratuito: ${pending.length}/${FREE_LIMIT} tareas</span>
+      ${remaining===0 ? `<a href="${FLOW_LINK}" target="_blank" style="font-size:12px; font-weight:600; color:var(--accent); text-decoration:none; margin-left:12px;">⬆ Upgrade a Pro — $5.990/mes</a>` : ''}`;
+  }
   const q1=pending.filter(t=>quadrant(t)==='q1');
   const today=new Date(); today.setHours(0,0,0,0);
   const weekEnd=new Date(today); weekEnd.setDate(weekEnd.getDate()+7);
@@ -545,6 +558,18 @@ document.getElementById('add-btn').addEventListener('click', ()=>{
     resetForm(); render(); persist(); return;
   }
 
+  // Verificar límite freemium (solo al agregar, no al editar)
+  const pending=tasks.filter(t=>!t.completed);
+  if(!isPro && pending.length >= FREE_LIMIT){
+    const banner=document.getElementById('plan-banner');
+    banner.style.borderColor='var(--border-danger)';
+    banner.style.background='var(--bg-danger)';
+    banner.innerHTML=`<span style="font-size:13px; color:var(--danger); flex:1;">Límite de ${FREE_LIMIT} tareas alcanzado en el plan gratuito.</span>
+      <a href="${FLOW_LINK}" target="_blank" style="font-size:13px; font-weight:600; color:var(--accent); text-decoration:none; white-space:nowrap;">⬆ Upgrade a Pro</a>`;
+    setTimeout(()=>render(), 3000);
+    return;
+  }
+
   const isRec=document.getElementById('t-recurring').checked;
   if(isRec){
     if(!selectedRecurDays.length) return;
@@ -612,6 +637,7 @@ onAuthStateChanged(auth, user=>{
       if(data){
         tasks=data.tasks||[]; history=data.history||[]; recurring=data.recurring||[];
         idCounter=data.idCounter||1; recurIdCounter=data.recurIdCounter||1; lastReset=data.lastReset||'';
+        isPro=data.isPro||false;
       }
       loaded=true;
       statusDot.classList.add('online');
