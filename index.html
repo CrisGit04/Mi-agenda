@@ -205,6 +205,7 @@ let selectedRecurDays = [];
 let editingTaskId = null;
 let loaded = false;
 let isRemoteUpdate = false;
+let lastReset = '';
 
 function quadrant(t){
   if(t.urgent && t.important) return 'q1';
@@ -232,18 +233,41 @@ function fmtDate(dateStr){
 
 function persist(){
   if(isRemoteUpdate) return;
-  set(dataRef, { tasks, history, recurring, idCounter, recurIdCounter });
+  set(dataRef, { tasks, history, recurring, idCounter, recurIdCounter, lastReset });
+}
+
+function getWeekKey(){
+  // Returns a string identifying the current Mon-Sun week: "YYYY-WNN"
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun, 1=Mon...
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+  const y = monday.getFullYear();
+  const start = new Date(y, 0, 1);
+  const weekNum = Math.ceil(((monday - start) / 86400000 + start.getDay() + 1) / 7);
+  return `${y}-W${weekNum}`;
 }
 
 function ensureRecurringInstances(){
+  // Only add instances that don't already exist as pending OR completed this week
   recurring.forEach(r => {
     r.days.forEach(d => {
-      const exists = tasks.some(t => t.recurringId === r.id && t.day === d && !t.completed);
+      const exists = tasks.some(t => t.recurringId === r.id && t.day === d);
       if(!exists){
         tasks.push({ id: 'task-' + (idCounter++), name: r.name, category: r.category, effort: r.effort, urgent: r.urgent, important: r.important, day: d, dueDate: '', completed: false, recurringId: r.id });
       }
     });
   });
+}
+
+function weeklyReset(){
+  const currentWeek = getWeekKey();
+  if(lastReset === currentWeek) return; // Already reset this week
+  // Remove all recurring instances (completed or not) so they regenerate fresh
+  tasks = tasks.filter(t => !t.recurringId);
+  lastReset = currentWeek;
+  ensureRecurringInstances();
 }
 
 function taskCard(t){
@@ -327,7 +351,7 @@ function completeTask(id){
     t.completedAt = new Date().toISOString();
     tasks = tasks.filter(x => x.id !== id);
     history.push(t);
-    if(t.recurringId) ensureRecurringInstances();
+    // Si es recurrente, NO recrear de inmediato — se recarga el próximo lunes
     render(); persist();
   }, 2500);
 }
@@ -454,7 +478,7 @@ document.getElementById('add-btn').addEventListener('click', () => {
     if(selectedRecurDays.length === 0) return;
     const r = { id: 'recur-' + (recurIdCounter++), name, category, effort, urgent, important, days: [...selectedRecurDays] };
     recurring.push(r);
-    ensureRecurringInstances();
+    ensureRecurringInstances(); // para la nueva recurrente recién creada siempre crear instancias
     document.getElementById('t-recurring').checked = false;
     document.getElementById('recurring-days').style.display = 'none';
     document.getElementById('t-day').disabled = false;
@@ -514,16 +538,28 @@ onValue(dataRef, (snapshot) => {
     recurring = data.recurring || [];
     idCounter = data.idCounter || 1;
     recurIdCounter = data.recurIdCounter || 1;
+    lastReset = data.lastReset || '';
   }
   loaded = true;
   statusDot.classList.add('online');
   statusText.textContent = 'Sincronizado';
-  ensureRecurringInstances();
+  weeklyReset();
   render();
   isRemoteUpdate = false;
 }, (error) => {
   statusText.textContent = 'Error de conexión';
 });
+
+// Revisar cada minuto si llegó el lunes para hacer el reset semanal automático
+setInterval(() => {
+  if(!loaded) return;
+  const currentWeek = getWeekKey();
+  if(lastReset !== currentWeek){
+    weeklyReset();
+    render();
+    persist();
+  }
+}, 60000);
 </script>
 </body>
 </html>
