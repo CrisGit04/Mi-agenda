@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Weekli</title>
+<title>Planwik</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.47.0/iconfont/tabler-icons.min.css">
 <style>
   :root{
@@ -135,7 +135,7 @@
 <!-- ── PANTALLA DE LOGIN ── -->
 <div id="auth-screen">
   <div id="auth-box">
-    <h2>📋 Weekli</h2>
+    <h2>📋 Planwik</h2>
     <p class="sub">Tu planificador semanal inteligente</p>
     <div id="auth-tabs">
       <button id="tab-login" class="active" type="button">Iniciar sesión</button>
@@ -154,7 +154,7 @@
   <div id="edit-toast"></div>
 
   <div id="app-header">
-    <h1>📋 Weekli</h1>
+    <h1>📋 Planwik</h1>
     <div id="user-info">
       <span id="user-email"></span>
       <button id="logout-btn" type="button">Salir</button>
@@ -399,7 +399,7 @@ function render(){
   const pending=tasks.filter(t=>!t.completed);
   const planBanner=document.getElementById('plan-banner');
   if(isPro){
-    planBanner.innerHTML=`<span style="font-size:12px; color:var(--success);">✦ Weekli Pro activo — tareas ilimitadas</span>`;
+    planBanner.innerHTML=`<span style="font-size:12px; color:var(--success);">✦ Planwik Pro activo — tareas ilimitadas</span>`;
   } else {
     const remaining=Math.max(0, FREE_LIMIT-pending.length);
     planBanner.innerHTML=`<span style="font-size:12px; color:var(--text-muted);">Plan gratuito: ${pending.length}/${FREE_LIMIT} tareas</span>
