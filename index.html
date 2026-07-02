@@ -3,666 +3,526 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Planwik</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.47.0/iconfont/tabler-icons.min.css">
+<title>Planwik — Planifica tu semana con claridad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg-page:#f7f6f3; --surface-1:#fdfcfa; --surface-2:#ffffff;
-    --border:#e4e2dc; --border-strong:#cfccc3;
-    --text-primary:#1d1c1a; --text-secondary:#5f5e5a; --text-muted:#8c8a82;
-    --accent:#185fa5; --bg-accent:#e6f1fb; --border-accent:#85b7eb;
-    --danger:#791f1f; --bg-danger:#fcebeb; --border-danger:#f09595;
-    --success:#085041; --bg-success:#e1f5ee;
-    --warning:#633806; --bg-warning:#faeeda;
-    --radius:8px;
-  }
-  @media (prefers-color-scheme: dark){
-    :root{
-      --bg-page:#161513; --surface-1:#211f1c; --surface-2:#272521;
-      --border:#3a3833; --border-strong:#4a4842;
-      --text-primary:#f1efe8; --text-secondary:#b4b2a9; --text-muted:#888780;
-      --accent:#85b7eb; --bg-accent:#0c447c; --border-accent:#378add;
-      --danger:#f7c1c1; --bg-danger:#791f1f;
-      --success:#9fe1cb; --bg-success:#085041;
-      --warning:#fac775; --bg-warning:#854f0b;
-    }
-  }
-  *{ box-sizing:border-box; }
-  body{
-    margin:0 auto; background:var(--bg-page); color:var(--text-primary);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-    padding:1.5rem; max-width:720px;
-  }
-  h1{ font-size:20px; font-weight:500; margin:0 0 1.5rem; }
-  input, select, button{
-    font-family:inherit; font-size:14px; border-radius:var(--radius);
-    border:0.5px solid var(--border-strong); background:var(--surface-2);
-    color:var(--text-primary); padding:8px 10px; height:36px;
-  }
-  button{ cursor:pointer; }
-  button:active{ transform:scale(0.98); }
-  button:hover{ background:var(--surface-1); }
-  .card{ background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:1rem 1.25rem; margin-bottom:1.5rem; }
-  .row{ display:grid; gap:8px; margin-bottom:8px; }
-  .row-3{ grid-template-columns:2fr 1fr 1fr; }
-  .row-4{ grid-template-columns:1fr 1fr 1fr 1fr; }
-  .summary{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:1.5rem; }
-  .metric{ background:var(--surface-1); border-radius:var(--radius); padding:1rem; }
-  .metric p:first-child{ font-size:12px; color:var(--text-secondary); margin:0 0 4px; }
-  .metric p:last-child{ font-size:22px; font-weight:500; margin:0; }
-  .section-title{ font-size:14px; font-weight:500; color:var(--text-secondary); margin:0 0 8px; display:flex; align-items:center; gap:6px; }
-  .matrix{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:1.5rem; }
-  .quadrant{ border-radius:12px; padding:10px; }
-  .quadrant p.qt{ font-size:13px; font-weight:500; margin:0; }
-  .quadrant p.qs{ font-size:11px; color:var(--text-secondary); margin:0 0 8px; }
-  .task{ background:var(--surface-2); border-radius:var(--radius); padding:8px 10px; display:flex; flex-direction:column; gap:4px; margin-bottom:6px; }
-  .task .top{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
-  .task .name{ font-size:13px; font-weight:500; margin:0; flex:1; min-width:0; }
-  .task .meta{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-  .badge{ font-size:11px; padding:2px 8px; border-radius:var(--radius); font-weight:500; }
-  .icon-btn{ border:0.5px solid var(--border-strong); background:var(--surface-1); padding:4px 8px; height:auto; font-size:13px; display:inline-flex; align-items:center; }
-  .week{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin-bottom:1.5rem; }
-  .day{ background:var(--surface-1); border-radius:var(--radius); padding:8px 6px; min-height:60px; }
-  .day p:first-child{ font-size:11px; font-weight:500; color:var(--text-secondary); margin:0 0 6px; }
-  .day p:last-child{ font-size:18px; font-weight:500; margin:0; }
-  .recur-row{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--radius); background:var(--surface-1); margin-bottom:6px; }
-  .day-chip{ padding:6px 10px; font-size:12px; }
-  .cat-trabajo{ background:#E6F1FB; color:#0C447C; }
-  .cat-personal{ background:#FBEAF0; color:#72243E; }
-  .cat-proyecto{ background:#FAEEDA; color:#633806; }
-  @media (prefers-color-scheme: dark){
-    .cat-trabajo{ background:#0C447C; color:#B5D4F4; }
-    .cat-personal{ background:#72243E; color:#F4C0D1; }
-    .cat-proyecto{ background:#633806; color:#FAC775; }
-  }
-  #status-bar{ font-size:12px; color:var(--text-muted); margin-bottom:1rem; display:flex; align-items:center; gap:6px; }
-  #status-dot{ width:7px; height:7px; border-radius:50%; background:var(--text-muted); flex-shrink:0; }
-  #status-dot.online{ background:#2e7d32; }
-  #edit-toast{
-    position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-20px);
-    background:var(--accent); color:#fff; padding:10px 18px; border-radius:999px;
-    font-size:13px; font-weight:500; opacity:0; pointer-events:none; transition:all 0.25s; z-index:999;
-    box-shadow:0 4px 16px rgba(0,0,0,0.25); white-space:nowrap;
-  }
-  #edit-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* ── AUTH SCREEN ── */
-  #auth-screen{
-    min-height:100vh; display:flex; align-items:center; justify-content:center;
-    position:fixed; inset:0; background:var(--bg-page); z-index:100;
+  :root {
+    --ink: #0f0f0f;
+    --ink-2: #3a3a3a;
+    --ink-3: #888;
+    --page: #f9f8f6;
+    --surface: #ffffff;
+    --accent: #1a4fd6;
+    --accent-light: #e8eefb;
+    --border: #e2e0db;
+    --q1: #b91c1c;
+    --q2: #0f766e;
+    --q3: #b45309;
+    --q4: #6b7280;
   }
-  #auth-box{
-    background:var(--surface-2); border:0.5px solid var(--border); border-radius:16px;
-    padding:2rem; width:100%; max-width:360px; display:flex; flex-direction:column; gap:1rem;
-  }
-  #auth-box h2{ font-size:20px; font-weight:500; margin:0; text-align:center; }
-  #auth-box p.sub{ font-size:13px; color:var(--text-muted); text-align:center; margin:0; }
-  #auth-box input{ width:100%; height:42px; font-size:15px; }
-  #auth-box .btn-primary{
-    width:100%; height:42px; background:var(--accent); color:#fff;
-    border:none; font-weight:500; font-size:15px; border-radius:var(--radius);
-  }
-  #auth-box .btn-primary:hover{ opacity:0.9; background:var(--accent); }
-  #auth-box .btn-link{ border:none; background:transparent; color:var(--accent); font-size:13px; cursor:pointer; height:auto; padding:0; }
-  #auth-error{ font-size:12px; color:var(--danger); text-align:center; min-height:16px; }
-  #auth-tabs{ display:flex; gap:8px; }
-  #auth-tabs button{ flex:1; height:36px; font-size:13px; }
-  #auth-tabs button.active{ background:var(--bg-accent); border-color:var(--border-accent); color:var(--accent); font-weight:500; }
 
-  /* ── HEADER usuario ── */
-  #app-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; }
-  #app-header h1{ margin:0; }
-  #user-info{ display:flex; align-items:center; gap:8px; }
-  #user-email{ font-size:12px; color:var(--text-muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  #logout-btn{ font-size:12px; padding:4px 10px; height:auto; }
+  html { scroll-behavior: smooth; }
 
-  @media (max-width:700px){
-    body{ padding:1rem; }
-    h1{ font-size:18px; }
-    .row-3{ grid-template-columns:1fr; }
-    .row-4{ grid-template-columns:1fr 1fr; }
-    .summary{ grid-template-columns:1fr 1fr; }
-    .matrix{ grid-template-columns:1fr !important; }
-    .week{ grid-template-columns:repeat(4,minmax(0,1fr)); }
-    input, select, button{ font-size:16px; }
-    .icon-btn{ padding:6px 10px; font-size:15px; }
-    #user-email{ max-width:100px; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--page);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 2rem;
+    background: rgba(249,248,246,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .nav-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--ink); text-decoration: none; letter-spacing: -0.5px; display:flex; align-items:center; gap:8px; }
+  .nav-cta { background: var(--accent); color: #fff; border: none; padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; }
+  .nav-cta:hover { opacity: 0.9; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 8rem 1.5rem 5rem;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent-light); color: var(--accent);
+    font-size: 12px; font-weight: 600; letter-spacing: 0.05em;
+    padding: 5px 12px; border-radius: 999px; margin-bottom: 2rem;
+    text-transform: uppercase;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.8rem, 7vw, 5.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    color: var(--ink);
+    max-width: 800px;
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: var(--ink-2);
+    max-width: 520px;
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
+  }
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .btn-primary {
+    background: var(--accent); color: #fff;
+    padding: 14px 32px; border-radius: 10px;
+    font-size: 16px; font-weight: 600;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-secondary {
+    background: transparent; color: var(--ink);
+    padding: 14px 32px; border-radius: 10px;
+    font-size: 16px; font-weight: 500;
+    text-decoration: none; border: 1.5px solid var(--border);
+    transition: border-color 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--ink-2); }
+  .hero-sub { margin-top: 2rem; font-size: 13px; color: var(--ink-3); }
+
+  /* PREVIEW */
+  .preview {
+    padding: 0 1.5rem 6rem;
+    display: flex; justify-content: center;
+  }
+  .preview-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    max-width: 720px; width: 100%;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.06);
+  }
+  .preview-bar {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 1.25rem;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #ffbd2e; }
+  .dot-g { background: #28c840; }
+  .preview-url {
+    flex: 1; background: #f1f0ee; border-radius: 6px;
+    padding: 4px 10px; font-size: 12px; color: var(--ink-3);
+    text-align: center;
+  }
+  .matrix-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .quad {
+    border-radius: 10px; padding: 12px;
+  }
+  .quad-q1 { background: #fef2f2; }
+  .quad-q2 { background: #f0fdf9; }
+  .quad-q3 { background: #fffbeb; }
+  .quad-q4 { background: #f9fafb; }
+  .quad-title { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .quad-sub { font-size: 10px; color: var(--ink-3); margin-bottom: 8px; }
+  .quad-q1 .quad-title { color: var(--q1); }
+  .quad-q2 .quad-title { color: var(--q2); }
+  .quad-q3 .quad-title { color: var(--q3); }
+  .quad-q4 .quad-title { color: var(--q4); }
+  .task-chip {
+    background: white; border: 0.5px solid #e5e7eb;
+    border-radius: 6px; padding: 6px 8px;
+    font-size: 11px; color: var(--ink-2);
+    margin-bottom: 5px; display: flex; align-items: center; gap: 6px;
+  }
+  .chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .chip-blue { background: #1a4fd6; }
+  .chip-pink { background: #db2777; }
+  .chip-amber { background: #d97706; }
+
+  /* PROBLEM */
+  .problem {
+    background: var(--ink);
+    color: white;
+    padding: 5rem 1.5rem;
+    text-align: center;
+  }
+  .problem h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 800; letter-spacing: -1px;
+    max-width: 600px; margin: 0 auto 1.5rem;
+    line-height: 1.15;
+  }
+  .problem p {
+    color: #aaa; font-size: 1.05rem;
+    max-width: 480px; margin: 0 auto;
+  }
+
+  /* FEATURES */
+  .features {
+    padding: 6rem 1.5rem;
+    max-width: 960px; margin: 0 auto;
+  }
+  .section-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  .features h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800; letter-spacing: -1px;
+    margin-bottom: 3rem; max-width: 500px;
+    line-height: 1.15;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+  }
+  .feature-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+  }
+  .feature-icon {
+    font-size: 28px; margin-bottom: 1rem;
+    display: block;
+  }
+  .feature-card h3 {
+    font-size: 16px; font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .feature-card p {
+    font-size: 14px; color: var(--ink-2); line-height: 1.6;
+  }
+
+  /* EISENHOWER */
+  .eisenhower {
+    background: var(--surface);
+    border-top: 0.5px solid var(--border);
+    border-bottom: 0.5px solid var(--border);
+    padding: 6rem 1.5rem;
+    text-align: center;
+  }
+  .eisenhower h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800; letter-spacing: -1px;
+    margin-bottom: 0.75rem;
+  }
+  .eisenhower > p {
+    color: var(--ink-2); font-size: 1rem;
+    max-width: 480px; margin: 0 auto 3rem;
+  }
+  .matrix-explain {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; max-width: 560px; margin: 0 auto;
+  }
+  .quad-explain {
+    border-radius: 12px; padding: 1.25rem; text-align: left;
+  }
+  .quad-explain h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .quad-explain p { font-size: 13px; line-height: 1.5; }
+  .qe1 { background: #fef2f2; }
+  .qe1 h4 { color: var(--q1); }
+  .qe1 p { color: #7f1d1d; }
+  .qe2 { background: #f0fdf9; }
+  .qe2 h4 { color: var(--q2); }
+  .qe2 p { color: #134e4a; }
+  .qe3 { background: #fffbeb; }
+  .qe3 h4 { color: var(--q3); }
+  .qe3 p { color: #78350f; }
+  .qe4 { background: #f9fafb; }
+  .qe4 h4 { color: var(--q4); }
+  .qe4 p { color: #374151; }
+
+  /* PRICING */
+  .pricing {
+    padding: 6rem 1.5rem;
+    max-width: 800px; margin: 0 auto;
+    text-align: center;
+  }
+  .pricing h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800; letter-spacing: -1px;
+    margin-bottom: 0.75rem;
+  }
+  .pricing > p { color: var(--ink-2); margin-bottom: 3rem; }
+  .pricing-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  .plan {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 16px; padding: 2rem;
+    text-align: left;
+  }
+  .plan.featured {
+    border-color: var(--accent);
+    background: #f5f8ff;
+  }
+  .plan-badge {
+    display: inline-block;
+    background: var(--accent); color: white;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 999px;
+    margin-bottom: 1rem; letter-spacing: 0.05em;
+  }
+  .plan h3 { font-size: 18px; font-weight: 600; margin-bottom: 0.5rem; }
+  .plan-price {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.5rem; font-weight: 800;
+    letter-spacing: -1px; margin-bottom: 0.25rem;
+  }
+  .plan-price span { font-size: 16px; font-weight: 400; color: var(--ink-3); }
+  .plan-desc { font-size: 13px; color: var(--ink-2); margin-bottom: 1.5rem; }
+  .plan-features { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .plan-features li { font-size: 14px; color: var(--ink-2); display: flex; gap: 8px; align-items: flex-start; }
+  .plan-features li::before { content: "✓"; color: var(--accent); font-weight: 600; flex-shrink: 0; }
+  .plan-cta {
+    display: block; text-align: center; margin-top: 1.5rem;
+    padding: 12px; border-radius: 10px;
+    font-size: 15px; font-weight: 600;
+    text-decoration: none; cursor: pointer; border: none;
+  }
+  .plan-cta-free { background: #f1f0ee; color: var(--ink); }
+  .plan-cta-pro { background: var(--accent); color: white; }
+
+  /* CTA FINAL */
+  .cta-final {
+    background: var(--ink); color: white;
+    padding: 6rem 1.5rem; text-align: center;
+  }
+  .cta-final h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800; letter-spacing: -1.5px;
+    max-width: 600px; margin: 0 auto 1rem;
+    line-height: 1.1;
+  }
+  .cta-final p { color: #aaa; margin-bottom: 2.5rem; font-size: 1.05rem; }
+  .cta-final .btn-primary { font-size: 17px; padding: 16px 40px; }
+  .cta-sub { margin-top: 1rem; font-size: 13px; color: #666; }
+
+  /* FOOTER */
+  footer {
+    padding: 2rem 1.5rem;
+    border-top: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; color: var(--ink-3);
+  }
+  footer a { color: var(--ink-3); text-decoration: none; }
+  footer a:hover { color: var(--ink); }
+
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    nav { padding: 1rem; }
+    .matrix-grid { grid-template-columns: 1fr; }
+    .matrix-explain { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 8px; text-align: center; }
   }
 </style>
 </head>
 <body>
 
-<!-- ── PANTALLA DE LOGIN ── -->
-<div id="auth-screen">
-  <div id="auth-box">
-    <h2>📋 Planwik</h2>
-    <p class="sub">Tu planificador semanal inteligente</p>
-    <div id="auth-tabs">
-      <button id="tab-login" class="active" type="button">Iniciar sesión</button>
-      <button id="tab-register" type="button">Registrarse</button>
-    </div>
-    <input id="auth-email" type="email" placeholder="Correo electrónico" autocomplete="email">
-    <input id="auth-password" type="password" placeholder="Contraseña (mín. 6 caracteres)" autocomplete="current-password">
-    <div id="auth-error"></div>
-    <button id="auth-submit" class="btn-primary" type="button">Iniciar sesión</button>
-    <button id="auth-forgot" class="btn-link" type="button">¿Olvidaste tu contraseña?</button>
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo"><svg viewBox="0 0 44 44" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="44" height="44" rx="10" fill="#1a4fd6"/><line x1="0" y1="22" x2="44" y2="22" stroke="#1a4fd6" stroke-width="2"/><line x1="22" y1="0" x2="22" y2="44" stroke="#1a4fd6" stroke-width="2"/><rect x="2" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,0.30)"/><rect x="24" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,0.15)"/><rect x="2" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,0.15)"/><rect x="24" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,0.07)"/><circle cx="11" cy="11" r="3.5" fill="rgba(255,255,255,0.90)"/></svg>Planwik</a>
+  <a href="/app.html" class="nav-cta">Empezar gratis</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:1.5rem;">
+    <svg viewBox="0 0 44 44" width="52" height="52" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="44" height="44" rx="11" fill="#1a4fd6"/><line x1="0" y1="22" x2="44" y2="22" stroke="#1a4fd6" stroke-width="2.5"/><line x1="22" y1="0" x2="22" y2="44" stroke="#1a4fd6" stroke-width="2.5"/><rect x="2.5" y="2.5" width="17" height="17" rx="5" fill="rgba(255,255,255,0.32)"/><rect x="24.5" y="2.5" width="17" height="17" rx="5" fill="rgba(255,255,255,0.16)"/><rect x="2.5" y="24.5" width="17" height="17" rx="5" fill="rgba(255,255,255,0.16)"/><rect x="24.5" y="24.5" width="17" height="17" rx="5" fill="rgba(255,255,255,0.07)"/><circle cx="11" cy="11" r="3.8" fill="rgba(255,255,255,0.92)"/></svg>
+    <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;letter-spacing:-1px;color:var(--ink);">Planwik</span>
   </div>
-</div>
-
-<!-- ── APP PRINCIPAL (oculta hasta autenticar) ── -->
-<div id="app" style="display:none;">
-  <div id="edit-toast"></div>
-
-  <div id="app-header">
-    <h1>📋 Planwik</h1>
-    <div id="user-info">
-      <span id="user-email"></span>
-      <button id="logout-btn" type="button">Salir</button>
-    </div>
+  <div class="hero-badge">✦ Planificación semanal inteligente</div>
+  <h1>Tu semana bajo<br><em>control total</em></h1>
+  <p>Planwik te ayuda a decidir qué hacer, qué delegar y qué ignorar — usando el mismo sistema que usan los ejecutivos más productivos del mundo.</p>
+  <div class="hero-actions">
+    <a href="/app.html" class="btn-primary">Comenzar gratis</a>
+    <a href="#como-funciona" class="btn-secondary">Ver cómo funciona</a>
   </div>
+  <p class="hero-sub">Sin tarjeta de crédito · Gratis hasta 10 tareas · Cancela cuando quieras</p>
+</section>
 
-  <div id="status-bar"><span id="status-dot"></span><span id="status-text">Conectando...</span></div>
-  <div id="plan-banner" style="display:flex; align-items:center; gap:8px; margin-bottom:1rem; padding:8px 12px; background:var(--surface-1); border-radius:var(--radius); border:0.5px solid var(--border);"></div>
-
-  <div class="card">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-      <p id="form-title" style="font-size:14px; font-weight:500; margin:0;">Nueva tarea</p>
+<!-- PREVIEW -->
+<div class="preview">
+  <div class="preview-card">
+    <div class="preview-bar">
+      <span class="dot dot-r"></span>
+      <span class="dot dot-y"></span>
+      <span class="dot dot-g"></span>
+      <span class="preview-url">planwik.app</span>
     </div>
-    <div class="row row-3">
-      <input id="t-name" type="text" placeholder="Nombre de la tarea">
-      <select id="t-cat">
-        <option value="trabajo">Trabajo</option>
-        <option value="personal">Personal</option>
-        <option value="proyecto">Proyecto especial</option>
-      </select>
-      <select id="t-effort">
-        <option value="corto">Esfuerzo corto</option>
-        <option value="medio" selected>Esfuerzo medio</option>
-        <option value="largo">Esfuerzo largo</option>
-      </select>
-    </div>
-    <div class="row row-4">
-      <select id="t-urgent"><option value="1">Urgente</option><option value="0">No urgente</option></select>
-      <select id="t-important"><option value="1">Importante</option><option value="0">No importante</option></select>
-      <select id="t-day">
-        <option value="">Día (opcional)</option>
-        <option>Lunes</option><option>Martes</option><option>Miércoles</option>
-        <option>Jueves</option><option>Viernes</option><option>Sábado</option><option>Domingo</option>
-      </select>
-      <input id="t-due" type="date">
-    </div>
-    <label id="recurring-label" style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; margin-bottom:8px;">
-      <input id="t-recurring" type="checkbox" style="width:auto; height:auto;">
-      <span>🔁 Tarea recurrente (elige los días que se repite)</span>
-    </label>
-    <div id="recurring-days" style="display:none; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
-      <button type="button" class="day-chip" data-day="Lunes">Lun</button>
-      <button type="button" class="day-chip" data-day="Martes">Mar</button>
-      <button type="button" class="day-chip" data-day="Miércoles">Mié</button>
-      <button type="button" class="day-chip" data-day="Jueves">Jue</button>
-      <button type="button" class="day-chip" data-day="Viernes">Vie</button>
-      <button type="button" class="day-chip" data-day="Sábado">Sáb</button>
-      <button type="button" class="day-chip" data-day="Domingo">Dom</button>
-    </div>
-    <div style="display:flex; gap:8px;">
-      <button id="add-btn" type="button" style="flex:1; font-weight:500;">+ Agregar tarea</button>
-      <button id="cancel-edit-btn" type="button" style="display:none;">Cancelar</button>
-    </div>
-  </div>
-
-  <div class="summary" id="summary"></div>
-
-  <p class="section-title">▦ Matriz de prioridad</p>
-  <div class="matrix" id="matrix"></div>
-
-  <p class="section-title">📅 Carga semanal</p>
-  <div class="week" id="week"></div>
-
-  <p class="section-title">🔁 Recurrentes activas</p>
-  <div id="recurring-list" style="margin-bottom:1.5rem;"></div>
-
-  <button id="hist-toggle" type="button" style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">
-    ▼ Historial / completadas (<span id="hist-count">0</span>)
-  </button>
-  <div id="hist-wrap" style="display:none;">
-    <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
-      <button id="hist-clear" type="button" style="font-size:12px;">Vaciar historial</button>
-    </div>
-    <div id="history"></div>
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDLc5rRLYl4dya15Gm0twDbFrVj42kH2tk",
-  authDomain: "proyecto-agenda-501016-9ff97.firebaseapp.com",
-  databaseURL: "https://proyecto-agenda-501016-9ff97-default-rtdb.firebaseio.com",
-  projectId: "proyecto-agenda-501016-9ff97",
-  storageBucket: "proyecto-agenda-501016-9ff97.firebasestorage.app",
-  messagingSenderId: "943297381815",
-  appId: "1:943297381815:web:10627482888b0d54539432"
-};
-
-const app = initializeApp(firebaseConfig);
-const db  = getDatabase(app);
-const auth = getAuth(app);
-
-// ── AUTH UI ──────────────────────────────────────────────
-let authMode = 'login';
-
-document.getElementById('tab-login').addEventListener('click', () => {
-  authMode = 'login';
-  document.getElementById('tab-login').classList.add('active');
-  document.getElementById('tab-register').classList.remove('active');
-  document.getElementById('auth-submit').textContent = 'Iniciar sesión';
-  document.getElementById('auth-forgot').style.display = 'block';
-  document.getElementById('auth-error').textContent = '';
-});
-
-document.getElementById('tab-register').addEventListener('click', () => {
-  authMode = 'register';
-  document.getElementById('tab-register').classList.add('active');
-  document.getElementById('tab-login').classList.remove('active');
-  document.getElementById('auth-submit').textContent = 'Crear cuenta';
-  document.getElementById('auth-forgot').style.display = 'none';
-  document.getElementById('auth-error').textContent = '';
-});
-
-document.getElementById('auth-submit').addEventListener('click', async () => {
-  const email = document.getElementById('auth-email').value.trim();
-  const pass  = document.getElementById('auth-password').value;
-  const errEl = document.getElementById('auth-error');
-  errEl.textContent = '';
-  if(!email || !pass){ errEl.textContent = 'Ingresa tu correo y contraseña.'; return; }
-  try {
-    if(authMode === 'register'){
-      await createUserWithEmailAndPassword(auth, email, pass);
-    } else {
-      await signInWithEmailAndPassword(auth, email, pass);
-    }
-  } catch(e) {
-    const msgs = {
-      'auth/email-already-in-use': 'Ya existe una cuenta con ese correo.',
-      'auth/invalid-email': 'Correo no válido.',
-      'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
-      'auth/user-not-found': 'No existe cuenta con ese correo.',
-      'auth/wrong-password': 'Contraseña incorrecta.',
-      'auth/invalid-credential': 'Correo o contraseña incorrectos.',
-      'auth/too-many-requests': 'Demasiados intentos. Espera un momento.',
-    };
-    errEl.textContent = msgs[e.code] || 'Error al autenticar. Intenta de nuevo.';
-  }
-});
-
-document.getElementById('auth-forgot').addEventListener('click', async () => {
-  const email = document.getElementById('auth-email').value.trim();
-  const errEl = document.getElementById('auth-error');
-  if(!email){ errEl.textContent = 'Ingresa tu correo primero.'; return; }
-  try {
-    await sendPasswordResetEmail(auth, email);
-    errEl.style.color = 'var(--success)';
-    errEl.textContent = 'Te enviamos un correo para restablecer tu contraseña.';
-  } catch(e) {
-    errEl.style.color = 'var(--danger)';
-    errEl.textContent = 'No se pudo enviar el correo. Verifica la dirección.';
-  }
-});
-
-document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-
-// ── AGENDA LOGIC ─────────────────────────────────────────
-const catLabel = { trabajo: 'Trabajo', personal: 'Personal', proyecto: 'Proyecto especial' };
-const catClass = { trabajo: 'cat-trabajo', personal: 'cat-personal', proyecto: 'cat-proyecto' };
-const effortLabel = { corto: 'Corto', medio: 'Medio', largo: 'Largo' };
-const days = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
-
-let tasks=[], history=[], recurring=[], idCounter=1, recurIdCounter=1;
-let selectedRecurDays=[], editingTaskId=null, loaded=false, isRemoteUpdate=false, lastReset='';
-let currentDataRef=null, currentListener=null;
-let isPro=false;
-const FREE_LIMIT=10;
-const FLOW_LINK='https://www.flow.cl/uri/pMJpTv9aA';
-
-function quadrant(t){
-  if(t.urgent && t.important) return 'q1';
-  if(!t.urgent && t.important) return 'q2';
-  if(t.urgent && !t.important) return 'q3';
-  return 'q4';
-}
-const quadrantMeta = {
-  q1:{ title:'Hacer ahora', sub:'Urgente + importante', bg:'var(--bg-danger)' },
-  q2:{ title:'Planificar', sub:'No urgente + importante', bg:'var(--bg-success)' },
-  q3:{ title:'Delegar', sub:'Urgente + no importante', bg:'var(--bg-warning)' },
-  q4:{ title:'Posponer', sub:'No urgente + no importante', bg:'var(--surface-1)' }
-};
-
-function daysUntil(d){ if(!d) return null; return (new Date(d+'T23:59:59')-new Date())/36e5; }
-function fmtDate(d){ if(!d) return ''; return new Date(d+'T00:00:00').toLocaleDateString('es-CL',{day:'2-digit',month:'short'}); }
-
-function getWeekKey(){
-  const now=new Date(), day=now.getDay(), offset=day===0?-6:1-day;
-  const mon=new Date(now); mon.setDate(now.getDate()+offset);
-  const y=mon.getFullYear(), start=new Date(y,0,1);
-  const wk=Math.ceil(((mon-start)/86400000+start.getDay()+1)/7);
-  return `${y}-W${wk}`;
-}
-
-function persist(){
-  if(isRemoteUpdate || !currentDataRef) return;
-  set(currentDataRef, { tasks, history, recurring, idCounter, recurIdCounter, lastReset, isPro });
-}
-
-function ensureRecurringInstances(){
-  recurring.forEach(r => {
-    r.days.forEach(d => {
-      const exists = tasks.some(t => t.recurringId===r.id && t.day===d);
-      if(!exists) tasks.push({ id:'task-'+(idCounter++), name:r.name, category:r.category, effort:r.effort, urgent:r.urgent, important:r.important, day:d, dueDate:'', completed:false, recurringId:r.id });
-    });
-  });
-}
-
-function weeklyReset(){
-  const cw = getWeekKey();
-  if(lastReset===cw) return;
-  tasks = tasks.filter(t => !t.recurringId);
-  lastReset = cw;
-  ensureRecurringInstances();
-}
-
-function taskCard(t){
-  const hrs=daysUntil(t.dueDate), isAlert=hrs!==null&&hrs<=48;
-  return `<div class="task" style="${isAlert?'border:0.5px solid var(--border-danger);':''}">
-    <div class="top">
-      <p class="name">${t.recurringId?'🔁 ':''}${t.name}</p>
-      <div style="display:flex;gap:4px;flex-shrink:0;">
-        <button class="icon-btn" data-edit="${t.id}" type="button">✎</button>
-        <button class="icon-btn" data-complete="${t.id}" type="button">✓</button>
-        <button class="icon-btn" data-delete="${t.id}" type="button">🗑</button>
+    <div class="matrix-grid">
+      <div class="quad quad-q1">
+        <div class="quad-title">Hacer ahora</div>
+        <div class="quad-sub">Urgente + importante</div>
+        <div class="task-chip"><span class="chip-dot chip-blue"></span>Reunión con cliente clave</div>
+        <div class="task-chip"><span class="chip-dot chip-pink"></span>Revisar contrato urgente</div>
+      </div>
+      <div class="quad quad-q2">
+        <div class="quad-title">Planificar</div>
+        <div class="quad-sub">No urgente + importante</div>
+        <div class="task-chip"><span class="chip-dot chip-blue"></span>Estrategia Q3</div>
+        <div class="task-chip"><span class="chip-dot chip-amber"></span>Lanzamiento nuevo producto</div>
+      </div>
+      <div class="quad quad-q3">
+        <div class="quad-title">Delegar</div>
+        <div class="quad-sub">Urgente + no importante</div>
+        <div class="task-chip"><span class="chip-dot chip-blue"></span>Responder correos rutina</div>
+      </div>
+      <div class="quad quad-q4">
+        <div class="quad-title">Posponer</div>
+        <div class="quad-sub">No urgente + no importante</div>
+        <div class="task-chip"><span class="chip-dot chip-pink"></span>Reorganizar carpetas</div>
       </div>
     </div>
-    <div class="meta">
-      <span class="badge ${catClass[t.category]}">${catLabel[t.category]}</span>
-      <span style="font-size:11px;color:var(--text-muted);">${effortLabel[t.effort]}</span>
-      ${t.dueDate?`<span style="font-size:11px;${isAlert?'color:var(--danger);font-weight:500;':'color:var(--text-muted);'}">${isAlert?'⚠ ':''}${fmtDate(t.dueDate)}</span>`:''}
-      ${t.day?`<span style="font-size:11px;color:var(--text-muted);">${t.day}</span>`:''}
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="problem">
+  <h2>Tienes muchas tareas.<br>Pocas son urgentes de verdad.</h2>
+  <p>La mayoría de las herramientas te dejan con listas interminables sin ayudarte a decidir qué importa. Planwik lo resuelve.</p>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="como-funciona">
+  <div class="section-label">Funcionalidades</div>
+  <h2>Todo lo que necesitas para dominar tu semana</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">▦</span>
+      <h3>Matriz de Eisenhower</h3>
+      <p>Clasifica cada tarea en uno de 4 cuadrantes automáticamente. Siempre sabrás qué atacar primero y qué ignorar.</p>
     </div>
-  </div>`;
-}
+    <div class="feature-card">
+      <span class="feature-icon">📅</span>
+      <h3>Vista semanal completa</h3>
+      <p>Ve tu carga de trabajo día por día. Detecta cuándo estás sobrecargado antes de que sea tarde para reorganizarte.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔁</span>
+      <h3>Tareas recurrentes</h3>
+      <p>Configura hábitos y rutinas semanales una sola vez. Se recargan automáticamente cada lunes, listas para ejecutar.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📱</span>
+      <h3>Sincronización en tiempo real</h3>
+      <p>Lo que agregas en el celular aparece al instante en tu computador. Tu agenda siempre actualizada, en cualquier dispositivo.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🎯</span>
+      <h3>Categorías con color</h3>
+      <p>Separa trabajo, vida personal y proyectos especiales con colores distintos. Un vistazo y sabes en qué estás gastando tu tiempo.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">✓</span>
+      <h3>Historial de logros</h3>
+      <p>Cada tarea completada queda registrada. Al final de la semana ves exactamente cuánto avanzaste — no solo lo que falta.</p>
+    </div>
+  </div>
+</section>
 
-function render(){
-  if(!loaded) return;
-  // Banner plan
-  const pending=tasks.filter(t=>!t.completed);
-  const planBanner=document.getElementById('plan-banner');
-  if(isPro){
-    planBanner.innerHTML=`<span style="font-size:12px; color:var(--success);">✦ Planwik Pro activo — tareas ilimitadas</span>`;
-  } else {
-    const remaining=Math.max(0, FREE_LIMIT-pending.length);
-    planBanner.innerHTML=`<span style="font-size:12px; color:var(--text-muted);">Plan gratuito: ${pending.length}/${FREE_LIMIT} tareas</span>
-      ${remaining===0 ? `<a href="${FLOW_LINK}" target="_blank" style="font-size:12px; font-weight:600; color:var(--accent); text-decoration:none; margin-left:12px;">⬆ Upgrade a Pro — $4.990/mes</a>` : ''}`;
-  }
-  const q1=pending.filter(t=>quadrant(t)==='q1');
-  const today=new Date(); today.setHours(0,0,0,0);
-  const weekEnd=new Date(today); weekEnd.setDate(weekEnd.getDate()+7);
-  const dueThisWeek=pending.filter(t=>t.dueDate&&new Date(t.dueDate+'T00:00:00')>=today&&new Date(t.dueDate+'T00:00:00')<=weekEnd);
-  const completedToday=history.filter(t=>t.completedAt&&new Date(t.completedAt).toDateString()===new Date().toDateString());
+<!-- EISENHOWER -->
+<section class="eisenhower">
+  <div class="section-label">El método</div>
+  <h2>La Matriz de Eisenhower</h2>
+  <p>El sistema de priorización usado por líderes, ejecutivos y presidentes durante décadas. Ahora en tu bolsillo.</p>
+  <div class="matrix-explain">
+    <div class="quad-explain qe1">
+      <h4>Q1 — Hacer ahora</h4>
+      <p>Urgente e importante. Estas tareas no esperan. Son tu prioridad absoluta del día.</p>
+    </div>
+    <div class="quad-explain qe2">
+      <h4>Q2 — Planificar</h4>
+      <p>Importante pero no urgente. Aquí vive tu crecimiento real. Agéndalas antes de que se vuelvan urgentes.</p>
+    </div>
+    <div class="quad-explain qe3">
+      <h4>Q3 — Delegar</h4>
+      <p>Urgente pero no importante. Alguien más puede hacerlo. No gastes tu energía aquí.</p>
+    </div>
+    <div class="quad-explain qe4">
+      <h4>Q4 — Posponer</h4>
+      <p>Ni urgente ni importante. Elimínalas o déjalas para cuando tengas tiempo libre real.</p>
+    </div>
+  </div>
+</section>
 
-  document.getElementById('summary').innerHTML=`
-    <div class="metric"><p>Pendientes</p><p>${pending.length}</p></div>
-    <div class="metric"><p>Hacer ahora</p><p>${q1.length}</p></div>
-    <div class="metric"><p>Vencen esta semana</p><p>${dueThisWeek.length}</p></div>
-    <div class="metric"><p>Completadas hoy</p><p>${completedToday.length}</p></div>`;
+<!-- PRICING -->
+<section class="pricing">
+  <div class="section-label">Planes</div>
+  <h2>Empieza gratis, escala cuando quieras</h2>
+  <p>Sin compromisos. Sin tarjeta de crédito para empezar.</p>
+  <div class="pricing-grid">
+    <div class="plan">
+      <h3>Gratis</h3>
+      <div class="plan-price">$0 <span>/mes</span></div>
+      <p class="plan-desc">Para probar y organizarte sin comprometer nada.</p>
+      <ul class="plan-features">
+        <li>Hasta 10 tareas activas</li>
+        <li>Matriz de Eisenhower</li>
+        <li>Vista semanal</li>
+        <li>Sincronización multi-dispositivo</li>
+        <li>Historial de completadas</li>
+      </ul>
+      <a href="/app.html" class="plan-cta plan-cta-free">Empezar gratis</a>
+    </div>
+    <div class="plan featured">
+      <span class="plan-badge">MÁS POPULAR</span>
+      <h3>Pro</h3>
+      <div class="plan-price">$4.990 <span>/mes</span></div>
+      <p class="plan-desc">Para profesionales que necesitan gestionar todo sin límites.</p>
+      <ul class="plan-features">
+        <li>Tareas ilimitadas</li>
+        <li>Tareas recurrentes automáticas</li>
+        <li>Categorías con color</li>
+        <li>Alertas de vencimiento</li>
+        <li>Todo lo del plan gratis</li>
+      </ul>
+      <a href="/app.html" class="plan-cta plan-cta-pro">Comenzar Pro</a>
+    </div>
+  </div>
+</section>
 
-  document.getElementById('matrix').innerHTML=['q1','q2','q3','q4'].map(qid=>{
-    const meta=quadrantMeta[qid];
-    const list=pending.filter(t=>quadrant(t)===qid).sort((a,b)=>{
-      if(!a.dueDate&&!b.dueDate) return 0;
-      if(!a.dueDate) return 1; if(!b.dueDate) return -1;
-      return new Date(a.dueDate)-new Date(b.dueDate);
-    });
-    return `<div class="quadrant" style="background:${meta.bg};">
-      <p class="qt">${meta.title}</p><p class="qs">${meta.sub}</p>
-      ${list.length?list.map(taskCard).join(''):'<p style="font-size:12px;color:var(--text-muted);margin:0;">Sin tareas</p>'}
-    </div>`;
-  }).join('');
+<!-- CTA FINAL -->
+<section class="cta-final">
+  <h2>Tu mejor semana empieza hoy</h2>
+  <p>Únete a los primeros usuarios de Planwik y toma el control de tu agenda.</p>
+  <a href="/app.html" class="btn-primary">Crear mi cuenta gratis</a>
+  <p class="cta-sub">Gratis para siempre hasta 10 tareas · Sin tarjeta de crédito</p>
+</section>
 
-  document.getElementById('week').innerHTML=days.map(d=>{
-    const n=pending.filter(t=>t.day===d).length;
-    return `<div class="day"><p>${d.slice(0,3)}</p><p>${n}</p></div>`;
-  }).join('');
+<!-- FOOTER -->
+<footer>
+  <span style="display:flex;align-items:center;gap:8px;">
+    <svg viewBox="0 0 44 44" width="20" height="20" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="44" height="44" rx="10" fill="#1a4fd6"/><line x1="0" y1="22" x2="44" y2="22" stroke="#1a4fd6" stroke-width="2"/><line x1="22" y1="0" x2="22" y2="44" stroke="#1a4fd6" stroke-width="2"/><rect x="2" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,0.30)"/><rect x="24" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,0.15)"/><rect x="2" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,0.15)"/><rect x="24" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,0.07)"/><circle cx="11" cy="11" r="3.5" fill="rgba(255,255,255,0.90)"/></svg>
+    © 2026 Planwik
+  </span>
+  <div style="display:flex; gap:1.5rem;">
+    <a href="/app.html">Ingresar</a>
+  </div>
+</footer>
 
-  document.getElementById('recurring-list').innerHTML=recurring.length
-    ?recurring.map(r=>`<div class="recur-row">
-        <span style="font-size:13px;flex:1;">🔁 ${r.name}</span>
-        <span class="badge ${catClass[r.category]}" style="font-size:10px;">${catLabel[r.category]}</span>
-        <span style="font-size:11px;color:var(--text-muted);">${r.days.map(d=>d.slice(0,3)).join(', ')}</span>
-        <button class="icon-btn" data-remove-recurring="${r.id}" type="button">✕</button>
-      </div>`).join('')
-    :'<p style="font-size:12px;color:var(--text-muted);">Sin tareas recurrentes</p>';
-
-  document.getElementById('hist-count').textContent=history.length;
-  document.getElementById('history').innerHTML=history.length
-    ?history.slice().reverse().map(t=>`<div class="recur-row">
-        <span style="font-size:12px;text-decoration:line-through;color:var(--text-muted);flex:1;">${t.name}</span>
-        <span class="badge ${catClass[t.category]}" style="font-size:10px;">${catLabel[t.category]}</span>
-        <button class="icon-btn" data-restore="${t.id}" type="button">↺</button>
-      </div>`).join('')
-    :'<p style="font-size:12px;color:var(--text-muted);">Vacío</p>';
-}
-
-function completeTask(id){
-  const t=tasks.find(x=>x.id===id); if(!t||t.completed) return;
-  t.completed=true; render(); persist();
-  setTimeout(()=>{ t.completedAt=new Date().toISOString(); tasks=tasks.filter(x=>x.id!==id); history.push(t); render(); persist(); }, 2500);
-}
-
-function deleteTask(id){
-  const t=tasks.find(x=>x.id===id); if(!t) return;
-  if(!window.confirm(`¿Eliminar "${t.name}" definitivamente?`)) return;
-  tasks=tasks.filter(x=>x.id!==id); render(); persist();
-}
-
-function restoreTask(id){
-  const idx=history.findIndex(x=>x.id===id); if(idx===-1) return;
-  const t=history.splice(idx,1)[0];
-  delete t.completedAt; t.completed=false;
-  tasks.push(t); render(); persist();
-}
-
-function removeRecurring(id){
-  recurring=recurring.filter(r=>r.id!==id);
-  tasks=tasks.filter(t=>t.recurringId!==id);
-  render(); persist();
-}
-
-function startEdit(id){
-  const t=tasks.find(x=>x.id===id); if(!t) return;
-  editingTaskId=id;
-  document.getElementById('t-name').value=t.name;
-  document.getElementById('t-cat').value=t.category;
-  document.getElementById('t-effort').value=t.effort;
-  document.getElementById('t-urgent').value=t.urgent?'1':'0';
-  document.getElementById('t-important').value=t.important?'1':'0';
-  document.getElementById('t-day').value=t.day||'';
-  document.getElementById('t-due').value=t.dueDate||'';
-  document.getElementById('form-title').textContent='✎ Editando tarea';
-  document.getElementById('add-btn').textContent='✓ Guardar cambios';
-  document.getElementById('cancel-edit-btn').style.display='inline-flex';
-  const recLabel=document.getElementById('recurring-label');
-  recLabel.style.opacity=t.recurringId?'0.5':'1';
-  recLabel.style.pointerEvents=t.recurringId?'none':'auto';
-  const toast=document.getElementById('edit-toast');
-  toast.textContent=`Editando: ${t.name}`;
-  toast.classList.add('show');
-  setTimeout(()=>toast.classList.remove('show'), 2500);
-  const card=document.querySelector('.card');
-  const top=window.pageYOffset+card.getBoundingClientRect().top-16;
-  window.scrollTo({top, behavior:'smooth'});
-  card.style.transition='box-shadow 0.3s';
-  card.style.boxShadow='0 0 0 2px var(--accent)';
-  setTimeout(()=>{ card.style.boxShadow='none'; }, 1200);
-  document.getElementById('t-name').focus();
-}
-
-function resetForm(){
-  editingTaskId=null;
-  ['t-name','t-due','t-day'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('t-cat').value='trabajo';
-  document.getElementById('t-effort').value='medio';
-  document.getElementById('t-urgent').value='1';
-  document.getElementById('t-important').value='1';
-  document.getElementById('form-title').textContent='Nueva tarea';
-  document.getElementById('add-btn').textContent='+ Agregar tarea';
-  document.getElementById('cancel-edit-btn').style.display='none';
-  document.getElementById('recurring-label').style.opacity='1';
-  document.getElementById('recurring-label').style.pointerEvents='auto';
-}
-
-// ── EVENTOS UI ────────────────────────────────────────────
-document.getElementById('cancel-edit-btn').addEventListener('click', resetForm);
-
-document.getElementById('t-recurring').addEventListener('change', e=>{
-  document.getElementById('recurring-days').style.display=e.target.checked?'flex':'none';
-  document.getElementById('t-day').disabled=e.target.checked;
-  document.getElementById('t-due').disabled=e.target.checked;
-});
-
-document.getElementById('recurring-days').addEventListener('click', e=>{
-  const chip=e.target.closest('.day-chip'); if(!chip) return;
-  const d=chip.getAttribute('data-day');
-  if(selectedRecurDays.includes(d)){
-    selectedRecurDays=selectedRecurDays.filter(x=>x!==d);
-    chip.style.background='var(--surface-2)'; chip.style.borderColor='var(--border-strong)';
-  } else {
-    selectedRecurDays.push(d);
-    chip.style.background='var(--bg-accent)'; chip.style.borderColor='var(--border-accent)';
-  }
-});
-
-document.getElementById('add-btn').addEventListener('click', ()=>{
-  const name=document.getElementById('t-name').value.trim(); if(!name) return;
-  const category=document.getElementById('t-cat').value;
-  const effort=document.getElementById('t-effort').value;
-  const urgent=document.getElementById('t-urgent').value==='1';
-  const important=document.getElementById('t-important').value==='1';
-
-  if(editingTaskId){
-    const t=tasks.find(x=>x.id===editingTaskId);
-    if(t){ Object.assign(t,{name,category,effort,urgent,important});
-      if(!t.recurringId){ t.day=document.getElementById('t-day').value; t.dueDate=document.getElementById('t-due').value; }
-    }
-    resetForm(); render(); persist(); return;
-  }
-
-  // Verificar límite freemium (solo al agregar, no al editar)
-  const pending=tasks.filter(t=>!t.completed);
-  if(!isPro && pending.length >= FREE_LIMIT){
-    const banner=document.getElementById('plan-banner');
-    banner.style.borderColor='var(--border-danger)';
-    banner.style.background='var(--bg-danger)';
-    banner.innerHTML=`<span style="font-size:13px; color:var(--danger); flex:1;">Límite de ${FREE_LIMIT} tareas alcanzado en el plan gratuito.</span>
-      <a href="${FLOW_LINK}" target="_blank" style="font-size:13px; font-weight:600; color:var(--accent); text-decoration:none; white-space:nowrap;">⬆ Upgrade a Pro</a>`;
-    setTimeout(()=>render(), 3000);
-    return;
-  }
-
-  const isRec=document.getElementById('t-recurring').checked;
-  if(isRec){
-    if(!selectedRecurDays.length) return;
-    const r={ id:'recur-'+(recurIdCounter++), name, category, effort, urgent, important, days:[...selectedRecurDays] };
-    recurring.push(r); ensureRecurringInstances();
-    document.getElementById('t-recurring').checked=false;
-    document.getElementById('recurring-days').style.display='none';
-    document.getElementById('t-day').disabled=false;
-    document.getElementById('t-due').disabled=false;
-    selectedRecurDays=[];
-    document.querySelectorAll('.day-chip').forEach(c=>{ c.style.background='var(--surface-2)'; c.style.borderColor='var(--border-strong)'; });
-  } else {
-    tasks.push({ id:'task-'+(idCounter++), name, category, effort, urgent, important, day:document.getElementById('t-day').value, dueDate:document.getElementById('t-due').value, completed:false });
-  }
-  document.getElementById('t-name').value='';
-  document.getElementById('t-due').value='';
-  document.getElementById('t-day').value='';
-  render(); persist();
-});
-
-document.getElementById('hist-toggle').addEventListener('click', ()=>{
-  const wrap=document.getElementById('hist-wrap');
-  wrap.style.display=wrap.style.display!=='none'?'none':'block';
-});
-
-document.getElementById('hist-clear').addEventListener('click', ()=>{ history=[]; render(); persist(); });
-
-document.getElementById('history').addEventListener('click', e=>{
-  const btn=e.target.closest('[data-restore]');
-  if(btn) restoreTask(btn.getAttribute('data-restore'));
-});
-
-document.getElementById('matrix').addEventListener('click', e=>{
-  const cb=e.target.closest('[data-complete]'); if(cb){ completeTask(cb.getAttribute('data-complete')); return; }
-  const db=e.target.closest('[data-delete]');   if(db){ deleteTask(db.getAttribute('data-delete')); return; }
-  const eb=e.target.closest('[data-edit]');     if(eb){ startEdit(eb.getAttribute('data-edit')); }
-});
-
-document.getElementById('recurring-list').addEventListener('click', e=>{
-  const btn=e.target.closest('[data-remove-recurring]');
-  if(btn) removeRecurring(btn.getAttribute('data-remove-recurring'));
-});
-
-// ── AUTH STATE ────────────────────────────────────────────
-const statusDot=document.getElementById('status-dot');
-const statusText=document.getElementById('status-text');
-
-onAuthStateChanged(auth, user=>{
-  if(user){
-    // Usuario autenticado → mostrar app
-    document.getElementById('auth-screen').style.display='none';
-    document.getElementById('app').style.display='block';
-    document.getElementById('user-email').textContent=user.email;
-
-    // Desconectar listener anterior si existía
-    if(currentDataRef && currentListener){ off(currentDataRef, 'value', currentListener); }
-
-    // Apuntar a los datos de este usuario específico
-    currentDataRef=ref(db, `users/${user.uid}/agenda`);
-    loaded=false; tasks=[]; history=[]; recurring=[]; idCounter=1; recurIdCounter=1; lastReset='';
-
-    currentListener=onValue(currentDataRef, snapshot=>{
-      const data=snapshot.val();
-      isRemoteUpdate=true;
-      if(data){
-        tasks=data.tasks||[]; history=data.history||[]; recurring=data.recurring||[];
-        idCounter=data.idCounter||1; recurIdCounter=data.recurIdCounter||1; lastReset=data.lastReset||'';
-        isPro=data.isPro||false;
-      }
-      loaded=true;
-      statusDot.classList.add('online');
-      statusText.textContent='Sincronizado';
-      weeklyReset(); render();
-      isRemoteUpdate=false;
-    }, ()=>{ statusText.textContent='Error de conexión'; });
-
-    // Reset semanal automático cada minuto
-    setInterval(()=>{
-      if(!loaded) return;
-      if(lastReset!==getWeekKey()){ weeklyReset(); render(); persist(); }
-    }, 60000);
-
-  } else {
-    // No autenticado → mostrar login
-    loaded=false;
-    if(currentDataRef && currentListener){ off(currentDataRef,'value',currentListener); }
-    document.getElementById('app').style.display='none';
-    document.getElementById('auth-screen').style.display='flex';
-    document.getElementById('auth-error').textContent='';
-    document.getElementById('auth-email').value='';
-    document.getElementById('auth-password').value='';
-  }
-});
-</script>
 </body>
 </html>
