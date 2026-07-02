@@ -403,7 +403,7 @@ function render(){
   } else {
     const remaining=Math.max(0, FREE_LIMIT-pending.length);
     planBanner.innerHTML=`<span style="font-size:12px; color:var(--text-muted);">Plan gratuito: ${pending.length}/${FREE_LIMIT} tareas</span>
-      ${remaining===0 ? `<a href="${FLOW_LINK}" target="_blank" style="font-size:12px; font-weight:600; color:var(--accent); text-decoration:none; margin-left:12px;">⬆ Upgrade a Pro — $5.990/mes</a>` : ''}`;
+      ${remaining===0 ? `<a href="${FLOW_LINK}" target="_blank" style="font-size:12px; font-weight:600; color:var(--accent); text-decoration:none; margin-left:12px;">⬆ Upgrade a Pro — $4.990/mes</a>` : ''}`;
   }
   const q1=pending.filter(t=>quadrant(t)==='q1');
   const today=new Date(); today.setHours(0,0,0,0);
