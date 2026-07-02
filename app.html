@@ -680,3 +680,106 @@ onAuthStateChanged(auth, user=>{
 <script>if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js')); }</script>
 </body>
 </html>
+
+<style>
+#install-btn{
+  position:fixed; bottom:20px; right:20px; z-index:200;
+  background:var(--accent,#1a4fd6); color:#fff;
+  border:none; border-radius:999px; padding:10px 18px;
+  font-size:13px; font-weight:600; cursor:pointer;
+  box-shadow:0 4px 16px rgba(26,79,214,0.35);
+  display:none; align-items:center; gap:8px;
+}
+#install-modal{
+  display:none; position:fixed; inset:0; z-index:300;
+  background:rgba(0,0,0,0.55); align-items:flex-end; justify-content:center;
+}
+#install-modal.open{ display:flex; }
+#install-box{
+  background:var(--surface-2,#fff); border-radius:20px 20px 0 0;
+  padding:1.5rem; width:100%; max-width:480px;
+  display:flex; flex-direction:column; gap:1rem;
+}
+#install-box h3{ font-size:17px; font-weight:600; margin:0; }
+#install-box p{ font-size:14px; color:#666; margin:0; line-height:1.6; }
+.install-step{
+  display:flex; align-items:flex-start; gap:12px;
+  background:#f5f7ff; border-radius:10px; padding:10px 12px;
+}
+.install-step .num{
+  background:#1a4fd6; color:#fff; border-radius:50%;
+  width:24px; height:24px; display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; flex-shrink:0; margin-top:1px;
+}
+.install-step p{ margin:0; font-size:13px; color:#333; }
+.install-step strong{ color:#1a4fd6; }
+#install-close{
+  background:#f1f0ee; border:none; border-radius:10px;
+  padding:12px; font-size:14px; font-weight:500; cursor:pointer; width:100%;
+}
+</style>
+
+<button id="install-btn">📲 Instalar en tu celular</button>
+
+<div id="install-modal">
+  <div id="install-box">
+    <h3 id="install-title">Instalar Planwik</h3>
+    <p id="install-desc"></p>
+    <div id="install-steps"></div>
+    <button id="install-close">Entendido</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const btn = document.getElementById('install-btn');
+  const modal = document.getElementById('install-modal');
+  const closeBtn = document.getElementById('install-close');
+  const stepsEl = document.getElementById('install-steps');
+  const descEl = document.getElementById('install-desc');
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const isMobile = isIOS || isAndroid;
+  const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+  let deferredPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if(isMobile && !isInStandalone) btn.style.display = 'flex';
+  });
+
+  if(isIOS && !isInStandalone){
+    btn.style.display = 'flex';
+  }
+
+  btn.addEventListener('click', () => {
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => { deferredPrompt = null; btn.style.display='none'; });
+      return;
+    }
+    if(isIOS){
+      descEl.textContent = 'Sigue estos pasos en Safari para instalar Planwik en tu iPhone:';
+      stepsEl.innerHTML = `
+        <div class="install-step"><span class="num">1</span><p>Toca el botón de <strong>Compartir</strong> (el cuadrado con flecha ↑) en la barra inferior de Safari</p></div>
+        <div class="install-step"><span class="num">2</span><p>Desliza hacia abajo y toca <strong>"Agregar a pantalla de inicio"</strong></p></div>
+        <div class="install-step"><span class="num">3</span><p>Toca <strong>"Agregar"</strong> en la esquina superior derecha</p></div>
+        <div class="install-step"><span class="num">4</span><p>¡Listo! El ícono de <strong>Planwik</strong> aparece en tu pantalla de inicio</p></div>`;
+    } else if(isAndroid){
+      descEl.textContent = 'Sigue estos pasos en Chrome para instalar Planwik en tu Android:';
+      stepsEl.innerHTML = `
+        <div class="install-step"><span class="num">1</span><p>Toca los <strong>tres puntos</strong> (⋮) en la esquina superior derecha de Chrome</p></div>
+        <div class="install-step"><span class="num">2</span><p>Toca <strong>"Agregar a pantalla de inicio"</strong> o <strong>"Instalar aplicación"</strong></p></div>
+        <div class="install-step"><span class="num">3</span><p>Toca <strong>"Instalar"</strong> para confirmar</p></div>
+        <div class="install-step"><span class="num">4</span><p>¡Listo! El ícono de <strong>Planwik</strong> aparece en tu pantalla de inicio</p></div>`;
+    }
+    modal.classList.add('open');
+  });
+
+  closeBtn.addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', e => { if(e.target === modal) modal.classList.remove('open'); });
+})();
+</script>
