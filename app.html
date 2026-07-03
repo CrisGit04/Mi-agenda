@@ -7,20 +7,20 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.47.0/iconfont/tabler-icons.min.css">
 <style>
   :root{
-    --bg-page:#f7f6f3; --surface-1:#fdfcfa; --surface-2:#ffffff;
-    --border:#e4e2dc; --border-strong:#cfccc3;
-    --text-primary:#1d1c1a; --text-secondary:#5f5e5a; --text-muted:#8c8a82;
-    --accent:#185fa5; --bg-accent:#e6f1fb; --border-accent:#85b7eb;
-    --danger:#791f1f; --bg-danger:#fcebeb; --border-danger:#f09595;
-    --success:#085041; --bg-success:#e1f5ee;
-    --warning:#633806; --bg-warning:#faeeda;
+    --bg-page:#EEF2F8; --surface-1:#E4EAF4; --surface-2:#ffffff;
+    --border:#C8D4E8; --border-strong:#A8B8D0;
+    --text-primary:#0F1F3D; --text-secondary:#3A5080; --text-muted:#7A8FAD;
+    --accent:#1a4fd6; --bg-accent:#D8E4F8; --border-accent:#85B7EB;
+    --danger:#C0392B; --bg-danger:#FDECEA; --border-danger:#E8A0A0;
+    --success:#1A7A4A; --bg-success:#E8F5EE;
+    --warning:#8C6010; --bg-warning:#FDF3DC;
     --radius:8px;
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --bg-page:#161513; --surface-1:#211f1c; --surface-2:#272521;
-      --border:#3a3833; --border-strong:#4a4842;
-      --text-primary:#f1efe8; --text-secondary:#b4b2a9; --text-muted:#888780;
+      --bg-page:#0A1220; --surface-1:#0F1F3D; --surface-2:#162848;
+      --border:#1E3560; --border-strong:#2A4A80;
+      --text-primary:#E8F0FA; --text-secondary:#A8C4E8; --text-muted:#6A8CB8;
       --accent:#85b7eb; --bg-accent:#0c447c; --border-accent:#378add;
       --danger:#f7c1c1; --bg-danger:#791f1f;
       --success:#9fe1cb; --bg-success:#085041;
@@ -351,10 +351,10 @@ function quadrant(t){
   return 'q4';
 }
 const quadrantMeta = {
-  q1:{ title:'Hacer ahora', sub:'Urgente + importante', bg:'var(--bg-danger)' },
-  q2:{ title:'Planificar', sub:'No urgente + importante', bg:'var(--bg-success)' },
-  q3:{ title:'Delegar', sub:'Urgente + no importante', bg:'var(--bg-warning)' },
-  q4:{ title:'Posponer', sub:'No urgente + no importante', bg:'var(--surface-1)' }
+  q1:{ title:'Hacer ahora', sub:'Urgente + importante', bg:'#0F1F3D', titleColor:'#E8F0FA', subColor:'#6A8CB8' },
+  q2:{ title:'Planificar', sub:'No urgente + importante', bg:'#1B3A6B', titleColor:'#C8DCFA', subColor:'#5A7AAA' },
+  q3:{ title:'Delegar', sub:'Urgente + no importante', bg:'#ffffff', titleColor:'#0F1F3D', subColor:'#7A8FAD' },
+  q4:{ title:'Posponer', sub:'No urgente + no importante', bg:'#EEF2F8', titleColor:'#4A6080', subColor:'#9AAAC0' }
 };
 
 function daysUntil(d){ if(!d) return null; return (new Date(d+'T23:59:59')-new Date())/36e5; }
@@ -403,20 +403,26 @@ function weeklyReset(){
 
 function taskCard(t){
   const hrs=daysUntil(t.dueDate), isAlert=hrs!==null&&hrs<=48;
-  return `<div class="task" style="${isAlert?'border:0.5px solid var(--border-danger);':''}">
-    <div class="top">
-      <p class="name">${t.recurringId?'🔁 ':''}${t.name}</p>
-      <div style="display:flex;gap:4px;flex-shrink:0;">
-        <button class="icon-btn" data-edit="${t.id}" type="button">✎</button>
-        <button class="icon-btn" data-complete="${t.id}" type="button">✓</button>
-        <button class="icon-btn" data-delete="${t.id}" type="button">🗑</button>
+  const qid = quadrant(t);
+  const isDark = qid === 'q1' || qid === 'q2';
+  const chipBg = isDark ? 'rgba(255,255,255,0.09)' : 'var(--surface-2)';
+  const chipBorder = isDark ? 'rgba(255,255,255,0.14)' : 'var(--border)';
+  const nameColor = isDark ? '#C8D8F0' : 'var(--text-primary)';
+  const metaColor = isDark ? '#6A8CB8' : 'var(--text-muted)';
+  return `<div style="background:${chipBg}; border:0.5px solid ${isAlert ? 'var(--border-danger)' : chipBorder}; border-radius:var(--radius); padding:8px 10px; display:flex; flex-direction:column; gap:4px; margin-bottom:6px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+      <p style="font-size:13px; font-weight:500; margin:0; flex:1; min-width:0; color:${nameColor};">${t.recurringId?'🔁 ':''}${t.name}</p>
+      <div style="display:flex; gap:4px; flex-shrink:0;">
+        <button class="icon-btn" data-edit="${t.id}" type="button" style="color:${isDark?'#A8C4E8':'var(--text-secondary)'}; border-color:${chipBorder}; background:${isDark?'rgba(255,255,255,0.06)':'var(--surface-1)'};" aria-label="Editar tarea">✎</button>
+        <button class="icon-btn" data-complete="${t.id}" type="button" style="color:${isDark?'#A8C4E8':'var(--text-secondary)'}; border-color:${chipBorder}; background:${isDark?'rgba(255,255,255,0.06)':'var(--surface-1)'};" aria-label="Completar tarea">✓</button>
+        <button class="icon-btn" data-delete="${t.id}" type="button" style="color:${isDark?'#A8C4E8':'var(--text-secondary)'}; border-color:${chipBorder}; background:${isDark?'rgba(255,255,255,0.06)':'var(--surface-1)'};" aria-label="Eliminar tarea">🗑</button>
       </div>
     </div>
-    <div class="meta">
-      <span class="badge ${catClass[t.category]}">${catLabel[t.category]}</span>
-      <span style="font-size:11px;color:var(--text-muted);">${effortLabel[t.effort]}</span>
-      ${t.dueDate?`<span style="font-size:11px;${isAlert?'color:var(--danger);font-weight:500;':'color:var(--text-muted);'}">${isAlert?'⚠ ':''}${fmtDate(t.dueDate)}</span>`:''}
-      ${t.day?`<span style="font-size:11px;color:var(--text-muted);">${t.day}</span>`:''}
+    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+      <span class="${catClass[t.category]}" style="font-size:11px; padding:2px 8px; border-radius:var(--radius); font-weight:500;">${catLabel[t.category]}</span>
+      <span style="font-size:11px; color:${metaColor};">${effortLabel[t.effort]}</span>
+      ${t.dueDate?`<span style="font-size:11px; ${isAlert?'color:var(--danger);font-weight:500;':'color:'+metaColor+';'}">${isAlert?'⚠ ':''}${fmtDate(t.dueDate)}</span>`:''}
+      ${t.day?`<span style="font-size:11px; color:${metaColor};">${t.day}</span>`:''}
     </div>
   </div>`;
 }
@@ -452,8 +458,8 @@ function render(){
       if(!a.dueDate) return 1; if(!b.dueDate) return -1;
       return new Date(a.dueDate)-new Date(b.dueDate);
     });
-    return `<div class="quadrant" style="background:${meta.bg};">
-      <p class="qt">${meta.title}</p><p class="qs">${meta.sub}</p>
+    return `<div class="quadrant" style="background:${meta.bg}; border:0.5px solid var(--border);">
+      <p class="qt" style="color:${meta.titleColor};">${meta.title}</p><p class="qs" style="color:${meta.subColor};">${meta.sub}</p>
       ${list.length?list.map(taskCard).join(''):'<p style="font-size:12px;color:var(--text-muted);margin:0;">Sin tareas</p>'}
     </div>`;
   }).join('');
