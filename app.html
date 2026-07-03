@@ -4,250 +4,207 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Planwik</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.47.0/iconfont/tabler-icons.min.css">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Planwik">
+<meta name="theme-color" content="#1a4fd6">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <style>
-  :root{
-    --bg-page:#f7f6f3; --surface-1:#fdfcfa; --surface-2:#ffffff;
-    --border:#e4e2dc; --border-strong:#cfccc3;
-    --text-primary:#1d1c1a; --text-secondary:#5f5e5a; --text-muted:#8c8a82;
-    --accent:#1a4fd6; --bg-accent:#e6f1fb; --border-accent:#85b7eb;
-    --danger:#791f1f; --bg-danger:#fcebeb; --border-danger:#f09595;
-    --success:#085041; --bg-success:#e1f5ee;
-    --warning:#633806; --bg-warning:#faeeda;
-    --radius:8px;
-  }
-  @media (prefers-color-scheme: dark){
-    :root{
-      --bg-page:#161513; --surface-1:#211f1c; --surface-2:#272521;
-      --border:#3a3833; --border-strong:#4a4842;
-      --text-primary:#f1efe8; --text-secondary:#b4b2a9; --text-muted:#888780;
-      --accent:#85b7eb; --bg-accent:#0c447c; --border-accent:#378add;
-      --danger:#f7c1c1; --bg-danger:#791f1f;
-      --success:#9fe1cb; --bg-success:#085041;
-      --warning:#fac775; --bg-warning:#854f0b;
-    }
-  }
-  *{ box-sizing:border-box; }
-  body{
-    margin:0 auto; background:var(--bg-page); color:var(--text-primary);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
-    padding:1.5rem; max-width:720px;
-  }
-  h1{ font-size:20px; font-weight:500; margin:0 0 1.5rem; }
-  input, select, button{
-    font-family:inherit; font-size:14px; border-radius:var(--radius);
-    border:0.5px solid var(--border-strong); background:var(--surface-2);
-    color:var(--text-primary); padding:8px 10px; height:36px;
-  }
-  button{ cursor:pointer; }
-  button:active{ transform:scale(0.98); }
-  button:hover{ background:var(--surface-1); }
-  .card{ background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:1rem 1.25rem; margin-bottom:1.5rem; }
-  .row{ display:grid; gap:8px; margin-bottom:8px; }
-  .row-3{ grid-template-columns:2fr 1fr 1fr; }
-  .row-4{ grid-template-columns:1fr 1fr 1fr 1fr; }
-  .summary{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:1.5rem; }
-  .metric{ background:var(--surface-1); border-radius:var(--radius); padding:1rem; }
-  .metric p:first-child{ font-size:12px; color:var(--text-secondary); margin:0 0 4px; }
-  .metric p:last-child{ font-size:22px; font-weight:500; margin:0; }
-  .section-title{ font-size:14px; font-weight:500; color:var(--text-secondary); margin:0 0 8px; display:flex; align-items:center; gap:6px; }
-  .matrix{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:1.5rem; }
-  .quadrant{ border-radius:12px; padding:10px; }
-  .quadrant p.qt{ font-size:13px; font-weight:500; margin:0; }
-  .quadrant p.qs{ font-size:11px; color:var(--text-secondary); margin:0 0 8px; }
-  .task{ background:var(--surface-2); border-radius:var(--radius); padding:8px 10px; display:flex; flex-direction:column; gap:4px; margin-bottom:6px; }
-  .task .top{ display:flex; align-items:center; justify-content:space-between; gap:6px; }
-  .task .name{ font-size:13px; font-weight:500; margin:0; flex:1; min-width:0; }
-  .task .meta{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-  .badge{ font-size:11px; padding:2px 8px; border-radius:var(--radius); font-weight:500; }
-  .icon-btn{ border:0.5px solid var(--border-strong); background:var(--surface-1); padding:4px 8px; height:auto; font-size:13px; display:inline-flex; align-items:center; }
-  .week{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; margin-bottom:1.5rem; }
-  .day{ background:var(--surface-1); border-radius:var(--radius); padding:8px 6px; min-height:60px; }
-  .day p:first-child{ font-size:11px; font-weight:500; color:var(--text-secondary); margin:0 0 6px; }
-  .day p:last-child{ font-size:18px; font-weight:500; margin:0; }
-  .recur-row{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--radius); background:var(--surface-1); margin-bottom:6px; }
-  .day-chip{ padding:6px 10px; font-size:12px; }
-  .cat-trabajo{ background:#E6F1FB; color:#0C447C; }
-  .cat-personal{ background:#FBEAF0; color:#72243E; }
-  .cat-proyecto{ background:#FAEEDA; color:#633806; }
-  @media (prefers-color-scheme: dark){
-    .cat-trabajo{ background:#0C447C; color:#B5D4F4; }
-    .cat-personal{ background:#72243E; color:#F4C0D1; }
-    .cat-proyecto{ background:#633806; color:#FAC775; }
-  }
-  #status-bar{ font-size:12px; color:var(--text-muted); margin-bottom:1rem; display:flex; align-items:center; gap:6px; }
-  #status-dot{ width:7px; height:7px; border-radius:50%; background:var(--text-muted); flex-shrink:0; }
-  #status-dot.online{ background:#2e7d32; }
-  #edit-toast{
-    position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-20px);
-    background:var(--accent); color:#fff; padding:10px 18px; border-radius:999px;
-    font-size:13px; font-weight:500; opacity:0; pointer-events:none; transition:all 0.25s; z-index:999;
-    box-shadow:0 4px 16px rgba(0,0,0,0.25); white-space:nowrap;
-  }
-  #edit-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
-
-  /* ── AUTH SCREEN ── */
-  #auth-screen{
-    min-height:100vh; display:flex; align-items:center; justify-content:center;
-    position:fixed; inset:0; background:var(--bg-page); z-index:100;
-  }
-  #auth-box{
-    background:var(--surface-2); border:0.5px solid var(--border); border-radius:16px;
-    padding:2rem; width:100%; max-width:360px; display:flex; flex-direction:column; gap:1rem;
-  }
-  #auth-box h2{ font-size:20px; font-weight:500; margin:0; text-align:center; }
-  #auth-box p.sub{ font-size:13px; color:var(--text-muted); text-align:center; margin:0; }
-  #auth-box input{ width:100%; height:42px; font-size:15px; }
-  #auth-box .btn-primary{
-    width:100%; height:42px; background:var(--accent); color:#fff;
-    border:none; font-weight:500; font-size:15px; border-radius:var(--radius);
-  }
-  #auth-box .btn-primary:hover{ opacity:0.9; background:var(--accent); }
-  #auth-box .btn-link{ border:none; background:transparent; color:var(--accent); font-size:13px; cursor:pointer; height:auto; padding:0; }
-  #auth-error{ font-size:12px; color:var(--danger); text-align:center; min-height:16px; }
-  #auth-tabs{ display:flex; gap:8px; }
-  #auth-tabs button{ flex:1; height:36px; font-size:13px; }
-  #auth-tabs button.active{ background:var(--bg-accent); border-color:var(--border-accent); color:var(--accent); font-weight:500; }
-
-  /* ── HEADER usuario ── */
-  #app-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; }
-  #app-header h1{ margin:0; }
-  #user-info{ display:flex; align-items:center; gap:8px; }
-  #user-email{ font-size:12px; color:var(--text-muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  #logout-btn{ font-size:12px; padding:4px 10px; height:auto; }
-
-  @media (max-width:700px){
-    body{ padding:1rem; }
-    h1{ font-size:18px; }
-    .row-3{ grid-template-columns:1fr; }
-    .row-4{ grid-template-columns:1fr 1fr; }
-    .summary{ grid-template-columns:1fr 1fr; }
-    .matrix{ grid-template-columns:1fr !important; }
-    .week{ grid-template-columns:repeat(4,minmax(0,1fr)); }
-    input, select, button{ font-size:16px; }
-    .icon-btn{ padding:6px 10px; font-size:15px; }
-    #user-email{ max-width:100px; }
-  }
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f7f6f3;--s1:#fdfcfa;--s2:#fff;
+  --border:#e4e2dc;--border2:#cfccc3;
+  --t1:#1d1c1a;--t2:#5f5e5a;--tm:#8c8a82;
+  --accent:#1a4fd6;--bg-accent:#e6f1fb;--border-accent:#85b7eb;
+  --danger:#791f1f;--bg-danger:#fcebeb;--border-danger:#f09595;
+  --success:#085041;--bg-success:#e1f5ee;
+  --warning:#633806;--bg-warning:#faeeda;
+  --r:8px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#161513;--s1:#211f1c;--s2:#272521;
+  --border:#3a3833;--border2:#4a4842;
+  --t1:#f1efe8;--t2:#b4b2a9;--tm:#888780;
+  --accent:#85b7eb;--bg-accent:#0c447c;--border-accent:#378add;
+  --danger:#f7c1c1;--bg-danger:#791f1f;
+  --success:#9fe1cb;--bg-success:#085041;
+  --warning:#fac775;--bg-warning:#854f0b;
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--t1);padding:1.5rem;max-width:720px;margin:0 auto;}
+input,select,button{font-family:inherit;font-size:14px;border-radius:var(--r);border:.5px solid var(--border2);background:var(--s2);color:var(--t1);padding:8px 10px;height:36px;}
+button{cursor:pointer;}
+button:hover{background:var(--s1);}
+.card{background:var(--s2);border:.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem;}
+.row{display:grid;gap:8px;margin-bottom:8px;}
+.r3{grid-template-columns:2fr 1fr 1fr;}
+.r4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;}
+.metric{background:var(--s1);border-radius:var(--r);padding:1rem;}
+.metric p:first-child{font-size:12px;color:var(--t2);margin:0 0 4px;}
+.metric p:last-child{font-size:22px;font-weight:500;margin:0;}
+.stitle{font-size:14px;font-weight:500;color:var(--t2);margin:0 0 8px;}
+.matrix{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;}
+.quad{border-radius:12px;padding:10px;}
+.quad .qt{font-size:13px;font-weight:500;margin:0;}
+.quad .qs{font-size:11px;color:var(--t2);margin:0 0 8px;}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:1.5rem;}
+.day{background:var(--s1);border-radius:var(--r);padding:8px 6px;min-height:60px;}
+.day p:first-child{font-size:11px;font-weight:500;color:var(--t2);margin:0 0 6px;}
+.day p:last-child{font-size:18px;font-weight:500;margin:0;}
+.recrow{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);background:var(--s1);margin-bottom:6px;}
+.ibtn{border:.5px solid var(--border2);background:var(--s1);padding:4px 8px;height:auto;font-size:13px;display:inline-flex;align-items:center;}
+.chip{border-radius:var(--r);padding:5px 8px;font-size:10px;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.cat-trabajo{background:#E6F1FB;color:#0C447C;}
+.cat-personal{background:#FBEAF0;color:#72243E;}
+.cat-proyecto{background:#FAEEDA;color:#633806;}
+@media(prefers-color-scheme:dark){
+  .cat-trabajo{background:#0C447C;color:#B5D4F4;}
+  .cat-personal{background:#72243E;color:#F4C0D1;}
+  .cat-proyecto{background:#633806;color:#FAC775;}
+}
+#sb{font-size:12px;color:var(--tm);margin-bottom:1rem;display:flex;align-items:center;gap:6px;}
+#sd{width:7px;height:7px;border-radius:50%;background:var(--tm);flex-shrink:0;}
+#sd.on{background:#2e7d32;}
+#et{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:500;opacity:0;pointer-events:none;transition:all .25s;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.25);white-space:nowrap;}
+#et.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* AUTH */
+#auth{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center;}
+#abox{background:var(--s2);border:.5px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:360px;display:flex;flex-direction:column;gap:1rem;}
+#abox h2{font-size:20px;font-weight:500;margin:0;text-align:center;display:flex;align-items:center;justify-content:center;gap:10px;}
+#abox p.sub{font-size:13px;color:var(--tm);text-align:center;margin:0;}
+#abox input{width:100%;height:42px;font-size:15px;}
+.abtn{width:100%;height:42px;background:var(--accent);color:#fff;border:none;font-weight:500;font-size:15px;border-radius:var(--r);}
+.abtn:hover{opacity:.9;background:var(--accent);}
+.atabs{display:flex;gap:8px;}
+.atabs button{flex:1;height:36px;font-size:13px;}
+.atabs button.active{background:var(--bg-accent);border-color:var(--border-accent);color:var(--accent);font-weight:500;}
+#aerr{font-size:12px;color:var(--danger);text-align:center;min-height:16px;}
+.alink{border:none;background:transparent;color:var(--accent);font-size:13px;cursor:pointer;height:auto;padding:0;}
+/* APP HEADER */
+#ah{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;}
+#ah h1{margin:0;font-size:20px;font-weight:500;display:flex;align-items:center;gap:8px;}
+#ui{display:flex;align-items:center;gap:8px;}
+#ue{font-size:12px;color:var(--tm);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* INSTALL BTN */
+#ibtnw{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;background:#1a4fd6;color:#fff;border:none;border-radius:999px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(26,79,214,.4);display:none;align-items:center;gap:8px;white-space:nowrap;}
+#imodal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center;}
+#imodal.open{display:flex;}
+#ibox{background:var(--s2);border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:480px;display:flex;flex-direction:column;gap:1rem;}
+#ibox h3{font-size:17px;font-weight:600;margin:0;}
+.istep{display:flex;align-items:flex-start;gap:12px;background:#f5f7ff;border-radius:10px;padding:10px 12px;}
+.istep .inum{background:#1a4fd6;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.istep p{margin:0;font-size:13px;}
+#iclose{background:#f1f0ee;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:500;cursor:pointer;width:100%;}
+/* RESPONSIVE */
+@media(max-width:700px){
+  body{padding:1rem;}
+  #ah h1{font-size:18px;}
+  .r3{grid-template-columns:1fr;}
+  .r4{grid-template-columns:1fr 1fr;}
+  .summary{grid-template-columns:1fr 1fr;}
+  .matrix{grid-template-columns:1fr!important;}
+  .week{grid-template-columns:repeat(4,1fr);}
+  input,select,button{font-size:16px;}
+  .ibtn{padding:6px 10px;font-size:15px;}
+  #ue{max-width:100px;}
+}
 </style>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Planwik">
-  <meta name="theme-color" content="#1a4fd6">
-  <link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body>
 
-<!-- ── PANTALLA DE LOGIN ── -->
-<div id="auth-screen">
-  <div id="auth-box">
-    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;">
-      <svg viewBox="0 0 44 44" width="36" height="36" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="44" height="44" rx="10" fill="#1a4fd6"/><line x1="0" y1="22" x2="44" y2="22" stroke="#1a4fd6" stroke-width="2"/><line x1="22" y1="0" x2="22" y2="44" stroke="#1a4fd6" stroke-width="2"/><rect x="2" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,0.30)"/><rect x="24" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,0.15)"/><rect x="2" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,0.15)"/><rect x="24" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,0.07)"/><circle cx="11" cy="11" r="3.5" fill="rgba(255,255,255,0.90)"/></svg>
-      <h2 style="margin:0;font-size:22px;font-weight:600;">Planwik</h2>
-    </div>
+<!-- AUTH -->
+<div id="auth">
+  <div id="abox">
+    <h2>
+      <svg viewBox="0 0 44 44" width="36" height="36"><rect x="0" y="0" width="44" height="44" rx="10" fill="#1a4fd6"/><line x1="0" y1="22" x2="44" y2="22" stroke="#1a4fd6" stroke-width="2"/><line x1="22" y1="0" x2="22" y2="44" stroke="#1a4fd6" stroke-width="2"/><rect x="2" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,.30)"/><rect x="24" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,.15)"/><rect x="2" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,.15)"/><rect x="24" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,.07)"/><circle cx="11" cy="11" r="3.5" fill="white"/></svg>
+      Planwik
+    </h2>
     <p class="sub">Tu planificador semanal inteligente</p>
-    <div id="auth-tabs">
-      <button id="tab-login" class="active" type="button">Iniciar sesión</button>
-      <button id="tab-register" type="button">Registrarse</button>
+    <div class="atabs">
+      <button id="tlogin" class="active" type="button">Iniciar sesión</button>
+      <button id="treg" type="button">Registrarse</button>
     </div>
-    <input id="auth-email" type="email" placeholder="Correo electrónico" autocomplete="email">
-    <input id="auth-password" type="password" placeholder="Contraseña (mín. 6 caracteres)" autocomplete="current-password">
-    <div id="auth-error"></div>
-    <button id="auth-submit" class="btn-primary" type="button">Iniciar sesión</button>
-    <button id="auth-forgot" class="btn-link" type="button">¿Olvidaste tu contraseña?</button>
+    <input id="aemail" type="email" placeholder="Correo electrónico" autocomplete="email">
+    <input id="apass" type="password" placeholder="Contraseña (mín. 6 caracteres)">
+    <div id="aerr"></div>
+    <button id="asubmit" class="abtn" type="button">Iniciar sesión</button>
+    <button id="aforgot" class="alink" type="button">¿Olvidaste tu contraseña?</button>
   </div>
 </div>
 
-<!-- ── APP PRINCIPAL (oculta hasta autenticar) ── -->
+<!-- APP -->
 <div id="app" style="display:none;">
-  <div id="edit-toast"></div>
-
-  <div id="app-header">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <svg viewBox="0 0 44 44" width="28" height="28" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="44" height="44" rx="10" fill="#1a4fd6"/><line x1="0" y1="22" x2="44" y2="22" stroke="#1a4fd6" stroke-width="2"/><line x1="22" y1="0" x2="22" y2="44" stroke="#1a4fd6" stroke-width="2"/><rect x="2" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,0.30)"/><rect x="24" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,0.15)"/><rect x="2" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,0.15)"/><rect x="24" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,0.07)"/><circle cx="11" cy="11" r="3.5" fill="rgba(255,255,255,0.90)"/></svg>
-      <h1 style="margin:0;font-size:20px;font-weight:500;">Planwik</h1>
-    </div>
-    <div id="user-info">
-      <span id="user-email"></span>
-      <button id="logout-btn" type="button">Salir</button>
-    </div>
+  <div id="et"></div>
+  <div id="ah">
+    <h1>
+      <svg viewBox="0 0 44 44" width="28" height="28"><rect x="0" y="0" width="44" height="44" rx="10" fill="#1a4fd6"/><line x1="0" y1="22" x2="44" y2="22" stroke="#1a4fd6" stroke-width="2"/><line x1="22" y1="0" x2="22" y2="44" stroke="#1a4fd6" stroke-width="2"/><rect x="2" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,.30)"/><rect x="24" y="2" width="18" height="18" rx="5" fill="rgba(255,255,255,.15)"/><rect x="2" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,.15)"/><rect x="24" y="24" width="18" height="18" rx="5" fill="rgba(255,255,255,.07)"/><circle cx="11" cy="11" r="3.5" fill="white"/></svg>
+      Planwik
+    </h1>
+    <div id="ui"><span id="ue"></span><button id="lout" type="button" style="font-size:12px;padding:4px 10px;height:auto;">Salir</button></div>
   </div>
-
-  <div id="status-bar"><span id="status-dot"></span><span id="status-text">Conectando...</span></div>
-  <div id="plan-banner" style="display:flex; align-items:center; gap:8px; margin-bottom:1rem; padding:8px 12px; background:var(--surface-1); border-radius:var(--radius); border:0.5px solid var(--border);"></div>
+  <div id="sb"><span id="sd"></span><span id="st">Conectando...</span></div>
+  <div id="plan-banner" style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;padding:8px 12px;background:var(--s1);border-radius:var(--r);border:.5px solid var(--border);"></div>
 
   <div class="card">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-      <p id="form-title" style="font-size:14px; font-weight:500; margin:0;">Nueva tarea</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <p id="ftitle" style="font-size:14px;font-weight:500;margin:0;">Nueva tarea</p>
     </div>
-    <div class="row row-3">
-      <input id="t-name" type="text" placeholder="Nombre de la tarea">
-      <select id="t-cat">
-        <option value="trabajo">Trabajo</option>
-        <option value="personal">Personal</option>
-        <option value="proyecto">Proyecto especial</option>
-      </select>
-      <select id="t-effort">
-        <option value="corto">Esfuerzo corto</option>
-        <option value="medio" selected>Esfuerzo medio</option>
-        <option value="largo">Esfuerzo largo</option>
-      </select>
+    <div class="row r3">
+      <input id="tn" type="text" placeholder="Nombre de la tarea">
+      <select id="tc"><option value="trabajo">Trabajo</option><option value="personal">Personal</option><option value="proyecto">Proyecto especial</option></select>
+      <select id="tef"><option value="corto">Esfuerzo corto</option><option value="medio" selected>Esfuerzo medio</option><option value="largo">Esfuerzo largo</option></select>
     </div>
-    <div class="row row-4">
-      <select id="t-urgent"><option value="1">Urgente</option><option value="0">No urgente</option></select>
-      <select id="t-important"><option value="1">Importante</option><option value="0">No importante</option></select>
-      <select id="t-day">
-        <option value="">Día (opcional)</option>
-        <option>Lunes</option><option>Martes</option><option>Miércoles</option>
-        <option>Jueves</option><option>Viernes</option><option>Sábado</option><option>Domingo</option>
-      </select>
-      <div style="position:relative;">
-        <input id="t-due" type="date" style="width:100%; padding-left:32px;">
-        <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:14px; pointer-events:none;">📅</span>
-      </div>
+    <div class="row r4">
+      <select id="tu"><option value="1">Urgente</option><option value="0">No urgente</option></select>
+      <select id="ti"><option value="1">Importante</option><option value="0">No importante</option></select>
+      <select id="td"><option value="">Día (opcional)</option><option>Lunes</option><option>Martes</option><option>Miércoles</option><option>Jueves</option><option>Viernes</option><option>Sábado</option><option>Domingo</option></select>
+      <div style="position:relative;"><input id="tdue" type="date" style="width:100%;padding-left:32px;"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;">📅</span></div>
     </div>
-    <p style="font-size:11px; color:var(--text-muted); margin:-4px 0 8px; text-align:right;">📅 Fecha límite (opcional)</p>
-    <label id="recurring-label" style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; margin-bottom:8px;">
-      <input id="t-recurring" type="checkbox" style="width:auto; height:auto;">
+    <p style="font-size:11px;color:var(--tm);margin:-4px 0 8px;text-align:right;">📅 Fecha límite (opcional)</p>
+    <label id="rlabel" style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:8px;">
+      <input id="trec" type="checkbox" style="width:auto;height:auto;">
       <span>🔁 Tarea recurrente (elige los días que se repite)</span>
     </label>
-    <div id="recurring-days" style="display:none; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
-      <button type="button" class="day-chip" data-day="Lunes">Lun</button>
-      <button type="button" class="day-chip" data-day="Martes">Mar</button>
-      <button type="button" class="day-chip" data-day="Miércoles">Mié</button>
-      <button type="button" class="day-chip" data-day="Jueves">Jue</button>
-      <button type="button" class="day-chip" data-day="Viernes">Vie</button>
-      <button type="button" class="day-chip" data-day="Sábado">Sáb</button>
-      <button type="button" class="day-chip" data-day="Domingo">Dom</button>
+    <div id="rdays" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+      <button type="button" class="daychip" data-day="Lunes">Lun</button>
+      <button type="button" class="daychip" data-day="Martes">Mar</button>
+      <button type="button" class="daychip" data-day="Miércoles">Mié</button>
+      <button type="button" class="daychip" data-day="Jueves">Jue</button>
+      <button type="button" class="daychip" data-day="Viernes">Vie</button>
+      <button type="button" class="daychip" data-day="Sábado">Sáb</button>
+      <button type="button" class="daychip" data-day="Domingo">Dom</button>
     </div>
-    <div style="display:flex; gap:8px;">
-      <button id="add-btn" type="button" style="flex:1; font-weight:500;">+ Agregar tarea</button>
-      <button id="cancel-edit-btn" type="button" style="display:none;">Cancelar</button>
+    <div style="display:flex;gap:8px;">
+      <button id="addbtn" type="button" style="flex:1;font-weight:500;">+ Agregar tarea</button>
+      <button id="cancelbtn" type="button" style="display:none;">Cancelar</button>
     </div>
   </div>
 
   <div class="summary" id="summary"></div>
-
-  <p class="section-title">▦ Matriz de prioridad</p>
+  <p class="stitle">▦ Matriz de prioridad</p>
   <div class="matrix" id="matrix"></div>
-
-  <p class="section-title">📅 Carga semanal</p>
+  <p class="stitle">📅 Carga semanal</p>
   <div class="week" id="week"></div>
-
-  <p class="section-title">🔁 Recurrentes activas</p>
-  <div id="recurring-list" style="margin-bottom:1.5rem;"></div>
-
-  <button id="hist-toggle" type="button" style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;">
-    ▼ Historial / completadas (<span id="hist-count">0</span>)
-  </button>
-  <div id="hist-wrap" style="display:none;">
-    <div style="display:flex; justify-content:flex-end; margin-bottom:6px;">
-      <button id="hist-clear" type="button" style="font-size:12px;">Vaciar historial</button>
-    </div>
+  <p class="stitle">🔁 Recurrentes activas</p>
+  <div id="reclist" style="margin-bottom:1.5rem;"></div>
+  <button id="htoggle" type="button" style="font-size:13px;color:var(--t2);margin-bottom:8px;">▼ Historial / completadas (<span id="hcount">0</span>)</button>
+  <div id="hwrap" style="display:none;">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:6px;"><button id="hclear" type="button" style="font-size:12px;">Vaciar historial</button></div>
     <div id="history"></div>
   </div>
 </div>
+
+<!-- INSTALL -->
+<button id="ibtnw" type="button">📲 Instalar en tu celular</button>
+<div id="imodal"><div id="ibox">
+  <h3>Instalar Planwik</h3>
+  <p id="idesc" style="font-size:14px;color:var(--tm);margin:0;"></p>
+  <div id="isteps"></div>
+  <button id="iclose" type="button">Entendido</button>
+</div></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
@@ -255,596 +212,391 @@ import { getDatabase, ref, set, onValue, off } from "https://www.gstatic.com/fir
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDLc5rRLYl4dya15Gm0twDbFrVj42kH2tk",
-  authDomain: "proyecto-agenda-501016-9ff97.firebaseapp.com",
-  databaseURL: "https://proyecto-agenda-501016-9ff97-default-rtdb.firebaseio.com",
-  projectId: "proyecto-agenda-501016-9ff97",
-  storageBucket: "proyecto-agenda-501016-9ff97.firebasestorage.app",
-  messagingSenderId: "943297381815",
-  appId: "1:943297381815:web:10627482888b0d54539432"
+  apiKey:"AIzaSyDLc5rRLYl4dya15Gm0twDbFrVj42kH2tk",
+  authDomain:"proyecto-agenda-501016-9ff97.firebaseapp.com",
+  databaseURL:"https://proyecto-agenda-501016-9ff97-default-rtdb.firebaseio.com",
+  projectId:"proyecto-agenda-501016-9ff97",
+  storageBucket:"proyecto-agenda-501016-9ff97.firebasestorage.app",
+  messagingSenderId:"943297381815",
+  appId:"1:943297381815:web:10627482888b0d54539432"
 };
-
 const app = initializeApp(firebaseConfig);
-const db  = getDatabase(app);
+const db = getDatabase(app);
 const auth = getAuth(app);
 
-// ── AUTH UI ──────────────────────────────────────────────
-let authMode = 'login';
-
-document.getElementById('tab-login').addEventListener('click', () => {
-  authMode = 'login';
-  document.getElementById('tab-login').classList.add('active');
-  document.getElementById('tab-register').classList.remove('active');
-  document.getElementById('auth-submit').textContent = 'Iniciar sesión';
-  document.getElementById('auth-forgot').style.display = 'block';
-  document.getElementById('auth-error').textContent = '';
-});
-
-document.getElementById('tab-register').addEventListener('click', () => {
-  authMode = 'register';
-  document.getElementById('tab-register').classList.add('active');
-  document.getElementById('tab-login').classList.remove('active');
-  document.getElementById('auth-submit').textContent = 'Crear cuenta';
-  document.getElementById('auth-forgot').style.display = 'none';
-  document.getElementById('auth-error').textContent = '';
-});
-
-document.getElementById('auth-submit').addEventListener('click', async () => {
-  const email = document.getElementById('auth-email').value.trim();
-  const pass  = document.getElementById('auth-password').value;
-  const errEl = document.getElementById('auth-error');
-  errEl.textContent = '';
-  if(!email || !pass){ errEl.textContent = 'Ingresa tu correo y contraseña.'; return; }
-  try {
-    if(authMode === 'register'){
-      await createUserWithEmailAndPassword(auth, email, pass);
-    } else {
-      await signInWithEmailAndPassword(auth, email, pass);
-    }
-  } catch(e) {
-    const msgs = {
-      'auth/email-already-in-use': 'Ya existe una cuenta con ese correo.',
-      'auth/invalid-email': 'Correo no válido.',
-      'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
-      'auth/user-not-found': 'No existe cuenta con ese correo.',
-      'auth/wrong-password': 'Contraseña incorrecta.',
-      'auth/invalid-credential': 'Correo o contraseña incorrectos.',
-      'auth/too-many-requests': 'Demasiados intentos. Espera un momento.',
-    };
-    errEl.textContent = msgs[e.code] || 'Error al autenticar. Intenta de nuevo.';
-  }
-});
-
-document.getElementById('auth-forgot').addEventListener('click', async () => {
-  const email = document.getElementById('auth-email').value.trim();
-  const errEl = document.getElementById('auth-error');
-  if(!email){ errEl.textContent = 'Ingresa tu correo primero.'; return; }
-  try {
-    await sendPasswordResetEmail(auth, email);
-    errEl.style.color = 'var(--success)';
-    errEl.textContent = 'Te enviamos un correo para restablecer tu contraseña.';
-  } catch(e) {
-    errEl.style.color = 'var(--danger)';
-    errEl.textContent = 'No se pudo enviar el correo. Verifica la dirección.';
-  }
-});
-
-document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-
-// ── AGENDA LOGIC ─────────────────────────────────────────
-const catLabel = { trabajo: 'Trabajo', personal: 'Personal', proyecto: 'Proyecto especial' };
-const catClass = { trabajo: 'cat-trabajo', personal: 'cat-personal', proyecto: 'cat-proyecto' };
-const effortLabel = { corto: 'Corto', medio: 'Medio', largo: 'Largo' };
-const days = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
-
-let tasks=[], history=[], recurring=[], idCounter=1, recurIdCounter=1;
-let selectedRecurDays=[], editingTaskId=null, loaded=false, isRemoteUpdate=false, lastReset='';
-let currentDataRef=null, currentListener=null;
-let isPro=false;
-const FREE_LIMIT=10;
+// ── CONSTANTS ─────────────────────────────────────────────
+const catLabel={trabajo:'Trabajo',personal:'Personal',proyecto:'Proyecto especial'};
+const catClass={trabajo:'cat-trabajo',personal:'cat-personal',proyecto:'cat-proyecto'};
+const effortLabel={corto:'Corto',medio:'Medio',largo:'Largo'};
+const DAYS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const FLOW_LINK='https://www.flow.cl/uri/pMJpTv9aA';
+const FREE_LIMIT=10;
 
-function quadrant(t){
-  if(t.urgent && t.important) return 'q1';
-  if(!t.urgent && t.important) return 'q2';
-  if(t.urgent && !t.important) return 'q3';
-  return 'q4';
+// ── STATE ─────────────────────────────────────────────────
+let tasks=[],history=[],recurring=[];
+let idCounter=1,recurIdCounter=1;
+let selDays=[],editingId=null;
+let loaded=false,isRemote=false,isPro=false,lastReset='';
+let curRef=null,curListener=null;
+
+// ── UTILS ─────────────────────────────────────────────────
+function Q(t){
+  if(t.urgent&&t.important)return'q1';
+  if(!t.urgent&&t.important)return'q2';
+  if(t.urgent&&!t.important)return'q3';
+  return'q4';
 }
-const quadrantMeta = {
-  q1:{ title:'Hacer ahora', sub:'Urgente + importante', bg:'var(--bg-danger)', titleColor:'var(--text-primary)', subColor:'var(--text-secondary)' },
-  q2:{ title:'Planificar', sub:'No urgente + importante', bg:'var(--bg-success)', titleColor:'var(--text-primary)', subColor:'var(--text-secondary)' },
-  q3:{ title:'Delegar', sub:'Urgente + no importante', bg:'var(--bg-warning)', titleColor:'var(--text-primary)', subColor:'var(--text-secondary)' },
-  q4:{ title:'Posponer', sub:'No urgente + no importante', bg:'var(--surface-1)', titleColor:'var(--text-primary)', subColor:'var(--text-secondary)' }
+const Qmeta={
+  q1:{title:'Hacer ahora',sub:'Urgente + importante',bg:'var(--bg-danger)'},
+  q2:{title:'Planificar',sub:'No urgente + importante',bg:'var(--bg-success)'},
+  q3:{title:'Delegar',sub:'Urgente + no importante',bg:'var(--bg-warning)'},
+  q4:{title:'Posponer',sub:'No urgente + no importante',bg:'var(--s1)'}
 };
-
-function daysUntil(d){ if(!d) return null; return (new Date(d+'T23:59:59')-new Date())/36e5; }
-function fmtDate(d){ if(!d) return ''; return new Date(d+'T00:00:00').toLocaleDateString('es-CL',{day:'2-digit',month:'short'}); }
-
+function hoursUntil(d){if(!d)return null;return(new Date(d+'T23:59:59')-new Date())/36e5;}
+function fmtDate(d){if(!d)return'';return new Date(d+'T00:00:00').toLocaleDateString('es-CL',{day:'2-digit',month:'short'});}
 function getWeekKey(){
-  const now=new Date(), day=now.getDay(), offset=day===0?-6:1-day;
-  const mon=new Date(now); mon.setDate(now.getDate()+offset);
-  const y=mon.getFullYear(), start=new Date(y,0,1);
-  const wk=Math.ceil(((mon-start)/86400000+start.getDay()+1)/7);
-  return `${y}-W${wk}`;
+  const n=new Date(),day=n.getDay(),off=day===0?-6:1-day;
+  const mon=new Date(n);mon.setDate(n.getDate()+off);
+  const y=mon.getFullYear(),s=new Date(y,0,1);
+  return`${y}-W${Math.ceil(((mon-s)/86400000+s.getDay()+1)/7)}`;
 }
 
+// ── PERSIST ───────────────────────────────────────────────
 function persist(){
-  if(isRemoteUpdate || !currentDataRef) return;
-  set(currentDataRef, { tasks, history, recurring, idCounter, recurIdCounter, lastReset, isPro });
+  if(isRemote||!curRef)return;
+  set(curRef,{tasks,history,recurring,idCounter,recurIdCounter,lastReset,isPro});
 }
 
-function ensureRecurringInstances(){
-  const currentWeek = getWeekKey();
-  recurring.forEach(r => {
-    r.days.forEach(d => {
-      // No recrear si ya existe pendiente
-      const pendingExists = tasks.some(t => t.recurringId===r.id && t.day===d && !t.completed);
-      if(pendingExists) return;
-      // No recrear si está en tránsito (completed=true pero aún no movida al historial)
-      const inTransit = tasks.some(t => t.recurringId===r.id && t.day===d && t.completed);
-      if(inTransit) return;
-      // No recrear si ya fue completada esta semana (está en historial con completedWeek actual)
-      const completedThisWeek = history.some(t =>
-        t.recurringId===r.id && t.day===d && t.completedWeek===currentWeek
-      );
-      if(completedThisWeek) return;
-      tasks.push({ id:'task-'+(idCounter++), name:r.name, category:r.category, effort:r.effort, urgent:r.urgent, important:r.important, day:d, dueDate:'', completed:false, recurringId:r.id });
+// ── RECURRING ─────────────────────────────────────────────
+function ensureRecurring(){
+  const cw=getWeekKey();
+  recurring.forEach(r=>{
+    r.days.forEach(d=>{
+      if(tasks.some(t=>t.recurringId===r.id&&t.day===d&&!t.completed))return;
+      if(tasks.some(t=>t.recurringId===r.id&&t.day===d&&t.completed))return;
+      if(history.some(t=>t.recurringId===r.id&&t.day===d&&t.completedWeek===cw))return;
+      tasks.push({id:'t'+(idCounter++),name:r.name,category:r.category,effort:r.effort,urgent:r.urgent,important:r.important,day:d,dueDate:'',completed:false,recurringId:r.id});
     });
   });
 }
-
 function weeklyReset(){
-  const cw = getWeekKey();
-  if(lastReset===cw) return;
-  tasks = tasks.filter(t => !t.recurringId);
-  lastReset = cw;
-  ensureRecurringInstances();
+  const cw=getWeekKey();
+  if(lastReset===cw)return;
+  tasks=tasks.filter(t=>!t.recurringId);
+  lastReset=cw;
+  ensureRecurring();
 }
 
+// ── RENDER ────────────────────────────────────────────────
 function taskCard(t){
-  const hrs=daysUntil(t.dueDate), isAlert=hrs!==null&&hrs<=48;
-  return `<div style="background:var(--surface-2); border:0.5px solid ${isAlert?'var(--border-danger)':'var(--border)'}; border-radius:var(--radius); padding:8px 10px; display:flex; flex-direction:column; gap:4px; margin-bottom:6px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
-      <p style="font-size:13px; font-weight:500; margin:0; flex:1; min-width:0; color:var(--text-primary);">${t.recurringId?'🔁 ':''}${t.name}</p>
-      <div style="display:flex; gap:4px; flex-shrink:0;">
-        <button class="icon-btn" data-edit="${t.id}" type="button" aria-label="Editar tarea">✎</button>
-        <button class="icon-btn" data-complete="${t.id}" type="button" aria-label="Completar tarea">✓</button>
-        <button class="icon-btn" data-delete="${t.id}" type="button" aria-label="Eliminar tarea">🗑</button>
+  const h=hoursUntil(t.dueDate),alert=h!==null&&h<=48;
+  return`<div style="background:var(--s2);border:.5px solid ${alert?'var(--border-danger)':'var(--border)'};border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:4px;margin-bottom:6px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+      <p style="font-size:13px;font-weight:500;margin:0;flex:1;min-width:0;color:var(--t1);">${t.name}</p>
+      <div style="display:flex;gap:4px;flex-shrink:0;">
+        <button class="ibtn" data-edit="${t.id}" type="button">✎</button>
+        <button class="ibtn" data-complete="${t.id}" type="button">✓</button>
+        <button class="ibtn" data-delete="${t.id}" type="button">🗑</button>
       </div>
     </div>
-    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-      <span class="${catClass[t.category]}" style="font-size:11px; padding:2px 8px; border-radius:var(--radius); font-weight:500;">${catLabel[t.category]}</span>
-      <span style="font-size:11px; color:var(--text-muted);">${effortLabel[t.effort]}</span>
-      ${t.dueDate?`<span style="font-size:11px; ${isAlert?'color:var(--danger);font-weight:500;':'color:var(--text-muted);'}">${isAlert?'⚠ ':''}${fmtDate(t.dueDate)}</span>`:''}
-      ${t.day?`<span style="font-size:11px; color:var(--text-muted);">${t.day}</span>`:''}
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span class="${catClass[t.category]}" style="font-size:11px;padding:2px 8px;border-radius:var(--r);font-weight:500;">${catLabel[t.category]}</span>
+      <span style="font-size:11px;color:var(--tm);">${effortLabel[t.effort]}</span>
+      ${t.dueDate?`<span style="font-size:11px;${alert?'color:var(--danger);font-weight:500;':'color:var(--tm);'}">${alert?'⚠ ':''}${fmtDate(t.dueDate)}</span>`:''}
+      ${t.day?`<span style="font-size:11px;color:var(--tm);">${t.day}</span>`:''}
     </div>
   </div>`;
 }
 
-function recurringGroupCard(r, instances){
-  const pendingDays = instances.filter(t => !t.completed);
-  if(!pendingDays.length) return '';
-  return `<div style="background:var(--surface-2); border:0.5px solid var(--border); border-radius:var(--radius); padding:8px 10px; margin-bottom:6px;">
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:4px;">
-      <p style="font-size:13px; font-weight:500; margin:0; flex:1; color:var(--text-primary);">🔁 ${r.name}</p>
-      <span style="font-size:11px; color:var(--text-muted);">${pendingDays.length} pendiente${pendingDays.length>1?'s':''}</span>
+function recurGroupCard(r,instances){
+  const pending=instances.filter(t=>!t.completed);
+  if(!pending.length)return'';
+  return`<div style="background:var(--s2);border:.5px solid var(--border);border-radius:var(--r);padding:8px 10px;margin-bottom:6px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px;">
+      <p style="font-size:13px;font-weight:500;margin:0;flex:1;color:var(--t1);">🔁 ${r.name}</p>
+      <span style="font-size:11px;color:var(--tm);">${pending.length} pendiente${pending.length>1?'s':''}</span>
     </div>
-    <p style="font-size:11px; color:var(--text-muted); margin:0 0 8px;">Recurrente semanal</p>
-    <div style="border-top:0.5px solid var(--border); padding-top:6px; display:flex; flex-direction:column; gap:0;">
-      ${pendingDays.map(t=>`<div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:0.5px solid var(--border);">
-        <button data-complete="${t.id}" type="button" aria-label="Completar ${t.day}" style="width:20px; height:20px; border-radius:4px; border:1.5px solid var(--border-strong); background:var(--surface-1); cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; padding:0; font-size:11px; color:transparent;">✓</button>
-        <span style="font-size:13px; color:var(--text-primary);">${t.day}</span>
+    <p style="font-size:11px;color:var(--tm);margin:0 0 8px;">Recurrente semanal</p>
+    <div style="border-top:.5px solid var(--border);padding-top:6px;">
+      ${pending.map(t=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:.5px solid var(--border);">
+        <button data-complete="${t.id}" type="button" style="width:20px;height:20px;border-radius:4px;border:1.5px solid var(--border2);background:var(--s1);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;font-size:11px;color:transparent;">✓</button>
+        <span style="font-size:13px;color:var(--t1);">${t.day}</span>
       </div>`).join('')}
     </div>
   </div>`;
 }
 
-function renderTaskList(list){
-  if(!list.length) return '<p style="font-size:12px;color:var(--text-muted);margin:0;">Sin tareas</p>';
-  // Separar recurrentes (agrupar) y no recurrentes (individual)
-  const nonRecurring = list.filter(t => !t.recurringId);
-  const recurringIds = [...new Set(list.filter(t=>t.recurringId).map(t=>t.recurringId))];
-  let html = '';
-  // Tarjetas individuales primero
-  html += nonRecurring.map(taskCard).join('');
-  // Tarjetas agrupadas por recurrente
-  recurringIds.forEach(rid => {
-    const r = recurring.find(x => x.id === rid);
-    if(!r) return;
-    const instances = list.filter(t => t.recurringId === rid);
-    html += recurringGroupCard(r, instances);
+function buildQuadList(list){
+  if(!list.length)return'<p style="font-size:12px;color:var(--tm);margin:0;">Sin tareas</p>';
+  const nonRec=list.filter(t=>!t.recurringId);
+  const recIds=[...new Set(list.filter(t=>t.recurringId).map(t=>t.recurringId))];
+  let html=nonRec.map(taskCard).join('');
+  recIds.forEach(rid=>{
+    const r=recurring.find(x=>x.id===rid);
+    if(r)html+=recurGroupCard(r,list.filter(t=>t.recurringId===rid));
   });
-  return html || '<p style="font-size:12px;color:var(--text-muted);margin:0;">Sin tareas</p>';
+  return html||'<p style="font-size:12px;color:var(--tm);margin:0;">Sin tareas</p>';
 }
 
 function render(){
-  if(!loaded) return;
-  // Banner plan
+  if(!loaded)return;
   const pending=tasks.filter(t=>!t.completed);
-  const planBanner=document.getElementById('plan-banner');
+  // Banner
+  const banner=document.getElementById('plan-banner');
   if(isPro){
-    planBanner.innerHTML=`<span style="font-size:12px; color:var(--success);">✦ Planwik Pro activo — tareas ilimitadas</span>`;
-  } else {
-    const remaining=Math.max(0, FREE_LIMIT-pending.length);
-    planBanner.innerHTML=`<span style="font-size:12px; color:var(--text-muted);">Plan gratuito: ${pending.length}/${FREE_LIMIT} tareas</span>
-      ${remaining===0 ? `<a href="${FLOW_LINK}" target="_blank" style="font-size:12px; font-weight:600; color:var(--accent); text-decoration:none; margin-left:12px;">⬆ Upgrade a Pro — $4.990/mes</a>` : ''}`;
+    banner.innerHTML=`<span style="font-size:12px;color:var(--success);">✦ Planwik Pro activo — tareas ilimitadas</span>`;
+  }else{
+    const rem=Math.max(0,FREE_LIMIT-pending.length);
+    banner.innerHTML=`<span style="font-size:12px;color:var(--tm);">Plan gratuito: ${pending.length}/${FREE_LIMIT} tareas</span>${rem===0?`<a href="${FLOW_LINK}" target="_blank" style="font-size:12px;font-weight:600;color:var(--accent);text-decoration:none;margin-left:12px;">⬆ Upgrade a Pro — $4.990/mes</a>`:''}`;
   }
-  const q1=pending.filter(t=>quadrant(t)==='q1');
-  const today=new Date(); today.setHours(0,0,0,0);
-  const weekEnd=new Date(today); weekEnd.setDate(weekEnd.getDate()+7);
-  const dueThisWeek=pending.filter(t=>t.dueDate&&new Date(t.dueDate+'T00:00:00')>=today&&new Date(t.dueDate+'T00:00:00')<=weekEnd);
-  const completedToday=history.filter(t=>t.completedAt&&new Date(t.completedAt).toDateString()===new Date().toDateString());
-
+  // Metrics
+  const q1=pending.filter(t=>Q(t)==='q1');
+  const today=new Date();today.setHours(0,0,0,0);
+  const weekEnd=new Date(today);weekEnd.setDate(weekEnd.getDate()+7);
+  const dueWeek=pending.filter(t=>t.dueDate&&new Date(t.dueDate+'T00:00:00')>=today&&new Date(t.dueDate+'T00:00:00')<=weekEnd);
+  const doneToday=history.filter(t=>t.completedAt&&new Date(t.completedAt).toDateString()===new Date().toDateString());
   document.getElementById('summary').innerHTML=`
     <div class="metric"><p>Pendientes</p><p>${pending.length}</p></div>
     <div class="metric"><p>Hacer ahora</p><p>${q1.length}</p></div>
-    <div class="metric"><p>Vencen esta semana</p><p>${dueThisWeek.length}</p></div>
-    <div class="metric"><p>Completadas hoy</p><p>${completedToday.length}</p></div>`;
-
+    <div class="metric"><p>Vencen esta semana</p><p>${dueWeek.length}</p></div>
+    <div class="metric"><p>Completadas hoy</p><p>${doneToday.length}</p></div>`;
+  // Matrix
   document.getElementById('matrix').innerHTML=['q1','q2','q3','q4'].map(qid=>{
-    const meta=quadrantMeta[qid];
-    const list=pending.filter(t=>quadrant(t)===qid).sort((a,b)=>{
-      if(!a.dueDate&&!b.dueDate) return 0;
-      if(!a.dueDate) return 1; if(!b.dueDate) return -1;
+    const m=Qmeta[qid];
+    const list=pending.filter(t=>Q(t)===qid).sort((a,b)=>{
+      if(!a.dueDate&&!b.dueDate)return 0;
+      if(!a.dueDate)return 1;if(!b.dueDate)return-1;
       return new Date(a.dueDate)-new Date(b.dueDate);
     });
-    return `<div class="quadrant" style="background:${meta.bg}; border:0.5px solid var(--border);">
-      <p class="qt" style="color:${meta.titleColor};">${meta.title}</p><p class="qs" style="color:${meta.subColor};">${meta.sub}</p>
-      ${renderTaskList(list)}
-    </div>`;
+    return`<div class="quad" style="background:${m.bg};"><p class="qt">${m.title}</p><p class="qs">${m.sub}</p>${buildQuadList(list)}</div>`;
   }).join('');
-
-  document.getElementById('week').innerHTML=days.map(d=>{
-    const n=pending.filter(t=>t.day===d).length;
-    return `<div class="day"><p>${d.slice(0,3)}</p><p>${n}</p></div>`;
-  }).join('');
-
-  document.getElementById('recurring-list').innerHTML=recurring.length
-    ?recurring.map(r=>`<div class="recur-row">
-        <span style="font-size:13px;flex:1;">🔁 ${r.name}</span>
-        <span class="badge ${catClass[r.category]}" style="font-size:10px;">${catLabel[r.category]}</span>
-        <span style="font-size:11px;color:var(--text-muted);">${r.days.map(d=>d.slice(0,3)).join(', ')}</span>
-        <button class="icon-btn" data-remove-recurring="${r.id}" type="button">✕</button>
-      </div>`).join('')
-    :'<p style="font-size:12px;color:var(--text-muted);">Sin tareas recurrentes</p>';
-
-  document.getElementById('hist-count').textContent=history.length;
+  // Week
+  document.getElementById('week').innerHTML=DAYS.map(d=>`<div class="day"><p>${d.slice(0,3)}</p><p>${pending.filter(t=>t.day===d).length}</p></div>`).join('');
+  // Recurring list
+  document.getElementById('reclist').innerHTML=recurring.length
+    ?recurring.map(r=>`<div class="recrow"><span style="font-size:13px;flex:1;">🔁 ${r.name}</span><span class="${catClass[r.category]}" style="font-size:10px;padding:1px 6px;border-radius:var(--r);font-weight:500;">${catLabel[r.category]}</span><span style="font-size:11px;color:var(--tm);">${r.days.map(d=>d.slice(0,3)).join(', ')}</span><button class="ibtn" data-remrec="${r.id}" type="button">✕</button></div>`).join('')
+    :'<p style="font-size:12px;color:var(--tm);">Sin tareas recurrentes</p>';
+  // History
+  document.getElementById('hcount').textContent=history.length;
   document.getElementById('history').innerHTML=history.length
-    ?history.slice().reverse().map(t=>`<div class="recur-row">
-        <span style="font-size:12px;text-decoration:line-through;color:var(--text-muted);flex:1;">${t.name}</span>
-        <span class="badge ${catClass[t.category]}" style="font-size:10px;">${catLabel[t.category]}</span>
-        <button class="icon-btn" data-restore="${t.id}" type="button">↺</button>
-      </div>`).join('')
-    :'<p style="font-size:12px;color:var(--text-muted);">Vacío</p>';
+    ?history.slice().reverse().map(t=>`<div class="recrow"><span style="font-size:12px;text-decoration:line-through;color:var(--tm);flex:1;">${t.name}</span><span class="${catClass[t.category]}" style="font-size:10px;padding:1px 6px;border-radius:var(--r);font-weight:500;">${catLabel[t.category]}</span><button class="ibtn" data-restore="${t.id}" type="button">↺</button></div>`).join('')
+    :'<p style="font-size:12px;color:var(--tm);">Vacío</p>';
 }
 
+// ── ACTIONS ───────────────────────────────────────────────
 function completeTask(id){
-  const t=tasks.find(x=>x.id===id); if(!t||t.completed) return;
-  // Feedback visual en el botón del checkbox si es recurrente agrupado
-  const btn = document.querySelector(`[data-complete="${id}"]`);
-  if(btn){
-    btn.style.background = 'var(--accent)';
-    btn.style.borderColor = 'var(--accent)';
-    btn.style.color = '#fff';
-  }
-  t.completed=true; render(); persist();
-  setTimeout(()=>{ t.completedAt=new Date().toISOString(); t.completedWeek=getWeekKey(); tasks=tasks.filter(x=>x.id!==id); history.push(t); render(); persist(); }, 2500);
+  const t=tasks.find(x=>x.id===id);if(!t||t.completed)return;
+  const btn=document.querySelector(`[data-complete="${id}"]`);
+  if(btn){btn.style.background='var(--accent)';btn.style.borderColor='var(--accent)';btn.style.color='#fff';}
+  t.completed=true;render();persist();
+  setTimeout(()=>{
+    t.completedAt=new Date().toISOString();t.completedWeek=getWeekKey();
+    tasks=tasks.filter(x=>x.id!==id);history.push(t);render();persist();
+  },2500);
 }
-
 function deleteTask(id){
-  const t=tasks.find(x=>x.id===id); if(!t) return;
-  if(!window.confirm(`¿Eliminar "${t.name}" definitivamente?`)) return;
-  tasks=tasks.filter(x=>x.id!==id); render(); persist();
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  if(!window.confirm(`¿Eliminar "${t.name}"?`))return;
+  tasks=tasks.filter(x=>x.id!==id);render();persist();
 }
-
 function restoreTask(id){
-  const idx=history.findIndex(x=>x.id===id); if(idx===-1) return;
-  const t=history.splice(idx,1)[0];
-  delete t.completedAt; t.completed=false;
-  tasks.push(t); render(); persist();
+  const i=history.findIndex(x=>x.id===id);if(i===-1)return;
+  const t=history.splice(i,1)[0];
+  delete t.completedAt;delete t.completedWeek;t.completed=false;
+  tasks.push(t);render();persist();
 }
-
-function removeRecurring(id){
+function removeRec(id){
   recurring=recurring.filter(r=>r.id!==id);
   tasks=tasks.filter(t=>t.recurringId!==id);
-  render(); persist();
+  render();persist();
 }
-
 function startEdit(id){
-  const t=tasks.find(x=>x.id===id); if(!t) return;
-  editingTaskId=id;
-  document.getElementById('t-name').value=t.name;
-  document.getElementById('t-cat').value=t.category;
-  document.getElementById('t-effort').value=t.effort;
-  document.getElementById('t-urgent').value=t.urgent?'1':'0';
-  document.getElementById('t-important').value=t.important?'1':'0';
-  document.getElementById('t-day').value=t.day||'';
-  document.getElementById('t-due').value=t.dueDate||'';
-  document.getElementById('form-title').textContent='✎ Editando tarea';
-  document.getElementById('add-btn').textContent='✓ Guardar cambios';
-  document.getElementById('cancel-edit-btn').style.display='inline-flex';
-  const recLabel=document.getElementById('recurring-label');
-  recLabel.style.opacity=t.recurringId?'0.5':'1';
-  recLabel.style.pointerEvents=t.recurringId?'none':'auto';
-  const toast=document.getElementById('edit-toast');
-  toast.textContent=`Editando: ${t.name}`;
-  toast.classList.add('show');
-  setTimeout(()=>toast.classList.remove('show'), 2500);
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  editingId=id;
+  document.getElementById('tn').value=t.name;
+  document.getElementById('tc').value=t.category;
+  document.getElementById('tef').value=t.effort;
+  document.getElementById('tu').value=t.urgent?'1':'0';
+  document.getElementById('ti').value=t.important?'1':'0';
+  document.getElementById('td').value=t.day||'';
+  document.getElementById('tdue').value=t.dueDate||'';
+  document.getElementById('ftitle').textContent='✎ Editando tarea';
+  document.getElementById('addbtn').textContent='✓ Guardar cambios';
+  document.getElementById('cancelbtn').style.display='inline-flex';
+  const rl=document.getElementById('rlabel');
+  rl.style.opacity=t.recurringId?'0.5':'1';rl.style.pointerEvents=t.recurringId?'none':'auto';
+  const toast=document.getElementById('et');
+  toast.textContent=`Editando: ${t.name}`;toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2500);
   const card=document.querySelector('.card');
-  const top=window.pageYOffset+card.getBoundingClientRect().top-16;
-  window.scrollTo({top, behavior:'smooth'});
-  card.style.transition='box-shadow 0.3s';
-  card.style.boxShadow='0 0 0 2px var(--accent)';
-  setTimeout(()=>{ card.style.boxShadow='none'; }, 1200);
-  document.getElementById('t-name').focus();
+  window.scrollTo({top:window.pageYOffset+card.getBoundingClientRect().top-16,behavior:'smooth'});
+  card.style.transition='box-shadow .3s';card.style.boxShadow='0 0 0 2px var(--accent)';
+  setTimeout(()=>{card.style.boxShadow='none';},1200);
+  document.getElementById('tn').focus();
 }
-
 function resetForm(){
-  editingTaskId=null;
-  ['t-name','t-due','t-day'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('t-cat').value='trabajo';
-  document.getElementById('t-effort').value='medio';
-  document.getElementById('t-urgent').value='1';
-  document.getElementById('t-important').value='1';
-  document.getElementById('form-title').textContent='Nueva tarea';
-  document.getElementById('add-btn').textContent='+ Agregar tarea';
-  document.getElementById('cancel-edit-btn').style.display='none';
-  document.getElementById('recurring-label').style.opacity='1';
-  document.getElementById('recurring-label').style.pointerEvents='auto';
+  editingId=null;
+  ['tn','tdue','td'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('tc').value='trabajo';
+  document.getElementById('tef').value='medio';
+  document.getElementById('tu').value='1';
+  document.getElementById('ti').value='1';
+  document.getElementById('ftitle').textContent='Nueva tarea';
+  document.getElementById('addbtn').textContent='+ Agregar tarea';
+  document.getElementById('cancelbtn').style.display='none';
+  const rl=document.getElementById('rlabel');rl.style.opacity='1';rl.style.pointerEvents='auto';
 }
 
-// ── EVENTOS UI ────────────────────────────────────────────
-document.getElementById('cancel-edit-btn').addEventListener('click', resetForm);
-
-document.getElementById('t-recurring').addEventListener('change', e=>{
-  document.getElementById('recurring-days').style.display=e.target.checked?'flex':'none';
-  document.getElementById('t-day').disabled=e.target.checked;
-  document.getElementById('t-due').disabled=e.target.checked;
+// ── EVENTS ────────────────────────────────────────────────
+document.getElementById('cancelbtn').addEventListener('click',resetForm);
+document.getElementById('trec').addEventListener('change',e=>{
+  document.getElementById('rdays').style.display=e.target.checked?'flex':'none';
+  document.getElementById('td').disabled=e.target.checked;
+  document.getElementById('tdue').disabled=e.target.checked;
 });
-
-document.getElementById('recurring-days').addEventListener('click', e=>{
-  const chip=e.target.closest('.day-chip'); if(!chip) return;
+document.getElementById('rdays').addEventListener('click',e=>{
+  const chip=e.target.closest('.daychip');if(!chip)return;
   const d=chip.getAttribute('data-day');
-  if(selectedRecurDays.includes(d)){
-    selectedRecurDays=selectedRecurDays.filter(x=>x!==d);
-    chip.style.background='var(--surface-2)'; chip.style.borderColor='var(--border-strong)';
-  } else {
-    selectedRecurDays.push(d);
-    chip.style.background='var(--bg-accent)'; chip.style.borderColor='var(--border-accent)';
-  }
+  if(selDays.includes(d)){selDays=selDays.filter(x=>x!==d);chip.style.background='var(--s2)';chip.style.borderColor='var(--border2)';}
+  else{selDays.push(d);chip.style.background='var(--bg-accent)';chip.style.borderColor='var(--border-accent)';}
 });
-
-document.getElementById('add-btn').addEventListener('click', ()=>{
-  const name=document.getElementById('t-name').value.trim(); if(!name) return;
-  const category=document.getElementById('t-cat').value;
-  const effort=document.getElementById('t-effort').value;
-  const urgent=document.getElementById('t-urgent').value==='1';
-  const important=document.getElementById('t-important').value==='1';
-
-  if(editingTaskId){
-    const t=tasks.find(x=>x.id===editingTaskId);
-    if(t){ Object.assign(t,{name,category,effort,urgent,important});
-      if(!t.recurringId){ t.day=document.getElementById('t-day').value; t.dueDate=document.getElementById('t-due').value; }
-    }
-    resetForm(); render(); persist(); return;
+document.getElementById('addbtn').addEventListener('click',()=>{
+  const name=document.getElementById('tn').value.trim();if(!name)return;
+  const category=document.getElementById('tc').value;
+  const effort=document.getElementById('tef').value;
+  const urgent=document.getElementById('tu').value==='1';
+  const important=document.getElementById('ti').value==='1';
+  if(editingId){
+    const t=tasks.find(x=>x.id===editingId);
+    if(t){Object.assign(t,{name,category,effort,urgent,important});
+      if(!t.recurringId){t.day=document.getElementById('td').value;t.dueDate=document.getElementById('tdue').value;}}
+    resetForm();render();persist();return;
   }
-
-  // Verificar límite freemium (solo al agregar, no al editar)
-  const pending=tasks.filter(t=>!t.completed);
-  if(!isPro && pending.length >= FREE_LIMIT){
-    const banner=document.getElementById('plan-banner');
-    banner.style.borderColor='var(--border-danger)';
-    banner.style.background='var(--bg-danger)';
-    banner.innerHTML=`<span style="font-size:13px; color:var(--danger); flex:1;">Límite de ${FREE_LIMIT} tareas alcanzado en el plan gratuito.</span>
-      <a href="${FLOW_LINK}" target="_blank" style="font-size:13px; font-weight:600; color:var(--accent); text-decoration:none; white-space:nowrap;">⬆ Upgrade a Pro</a>`;
-    setTimeout(()=>render(), 3000);
-    return;
-  }
-
-  const isRec=document.getElementById('t-recurring').checked;
+  const isRec=document.getElementById('trec').checked;
   if(isRec){
-    if(!selectedRecurDays.length) return;
-    const r={ id:'recur-'+(recurIdCounter++), name, category, effort, urgent, important, days:[...selectedRecurDays] };
-    recurring.push(r); ensureRecurringInstances();
-    document.getElementById('t-recurring').checked=false;
-    document.getElementById('recurring-days').style.display='none';
-    document.getElementById('t-day').disabled=false;
-    document.getElementById('t-due').disabled=false;
-    selectedRecurDays=[];
-    document.querySelectorAll('.day-chip').forEach(c=>{ c.style.background='var(--surface-2)'; c.style.borderColor='var(--border-strong)'; });
-  } else {
-    tasks.push({ id:'task-'+(idCounter++), name, category, effort, urgent, important, day:document.getElementById('t-day').value, dueDate:document.getElementById('t-due').value, completed:false });
+    if(!selDays.length)return;
+    recurring.push({id:'r'+(recurIdCounter++),name,category,effort,urgent,important,days:[...selDays]});
+    ensureRecurring();
+    document.getElementById('trec').checked=false;
+    document.getElementById('rdays').style.display='none';
+    document.getElementById('td').disabled=false;document.getElementById('tdue').disabled=false;
+    selDays=[];document.querySelectorAll('.daychip').forEach(c=>{c.style.background='var(--s2)';c.style.borderColor='var(--border2)';});
+  }else{
+    const pending=tasks.filter(t=>!t.completed);
+    if(!isPro&&pending.length>=FREE_LIMIT){
+      const b=document.getElementById('plan-banner');
+      b.style.borderColor='var(--border-danger)';b.style.background='var(--bg-danger)';
+      b.innerHTML=`<span style="font-size:13px;color:var(--danger);flex:1;">Límite de ${FREE_LIMIT} tareas alcanzado.</span><a href="${FLOW_LINK}" target="_blank" style="font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;white-space:nowrap;">⬆ Upgrade a Pro</a>`;
+      setTimeout(()=>render(),3000);return;
+    }
+    tasks.push({id:'t'+(idCounter++),name,category,effort,urgent,important,day:document.getElementById('td').value,dueDate:document.getElementById('tdue').value,completed:false});
   }
-  document.getElementById('t-name').value='';
-  document.getElementById('t-due').value='';
-  document.getElementById('t-day').value='';
-  render(); persist();
+  document.getElementById('tn').value='';document.getElementById('tdue').value='';document.getElementById('td').value='';
+  render();persist();
 });
-
-document.getElementById('hist-toggle').addEventListener('click', ()=>{
-  const wrap=document.getElementById('hist-wrap');
-  wrap.style.display=wrap.style.display!=='none'?'none':'block';
+document.getElementById('htoggle').addEventListener('click',()=>{
+  const w=document.getElementById('hwrap');w.style.display=w.style.display!=='none'?'none':'block';
 });
-
-document.getElementById('hist-clear').addEventListener('click', ()=>{ history=[]; render(); persist(); });
-
-document.getElementById('history').addEventListener('click', e=>{
-  const btn=e.target.closest('[data-restore]');
-  if(btn) restoreTask(btn.getAttribute('data-restore'));
+document.getElementById('hclear').addEventListener('click',()=>{history=[];render();persist();});
+document.getElementById('matrix').addEventListener('click',e=>{
+  const cb=e.target.closest('[data-complete]');if(cb){completeTask(cb.getAttribute('data-complete'));return;}
+  const db=e.target.closest('[data-delete]');if(db){deleteTask(db.getAttribute('data-delete'));return;}
+  const eb=e.target.closest('[data-edit]');if(eb)startEdit(eb.getAttribute('data-edit'));
 });
-
-document.getElementById('matrix').addEventListener('click', e=>{
-  const cb=e.target.closest('[data-complete]'); if(cb){ completeTask(cb.getAttribute('data-complete')); return; }
-  const db=e.target.closest('[data-delete]');   if(db){ deleteTask(db.getAttribute('data-delete')); return; }
-  const eb=e.target.closest('[data-edit]');     if(eb){ startEdit(eb.getAttribute('data-edit')); }
+document.getElementById('history').addEventListener('click',e=>{
+  const rb=e.target.closest('[data-restore]');if(rb)restoreTask(rb.getAttribute('data-restore'));
 });
+document.getElementById('reclist').addEventListener('click',e=>{
+  const rb=e.target.closest('[data-remrec]');if(rb)removeRec(rb.getAttribute('data-remrec'));
+});
+document.getElementById('lout').addEventListener('click',()=>signOut(auth));
 
-document.getElementById('recurring-list').addEventListener('click', e=>{
-  const btn=e.target.closest('[data-remove-recurring]');
-  if(btn) removeRecurring(btn.getAttribute('data-remove-recurring'));
+// ── AUTH UI ───────────────────────────────────────────────
+let authMode='login';
+document.getElementById('tlogin').addEventListener('click',()=>{
+  authMode='login';
+  document.getElementById('tlogin').classList.add('active');document.getElementById('treg').classList.remove('active');
+  document.getElementById('asubmit').textContent='Iniciar sesión';
+  document.getElementById('aforgot').style.display='block';
+  document.getElementById('aerr').textContent='';
+});
+document.getElementById('treg').addEventListener('click',()=>{
+  authMode='register';
+  document.getElementById('treg').classList.add('active');document.getElementById('tlogin').classList.remove('active');
+  document.getElementById('asubmit').textContent='Crear cuenta';
+  document.getElementById('aforgot').style.display='none';
+  document.getElementById('aerr').textContent='';
+});
+document.getElementById('asubmit').addEventListener('click',async()=>{
+  const email=document.getElementById('aemail').value.trim();
+  const pass=document.getElementById('apass').value;
+  const err=document.getElementById('aerr');
+  err.textContent='';err.style.color='var(--danger)';
+  if(!email||!pass){err.textContent='Ingresa tu correo y contraseña.';return;}
+  try{
+    if(authMode==='register')await createUserWithEmailAndPassword(auth,email,pass);
+    else await signInWithEmailAndPassword(auth,email,pass);
+  }catch(e){
+    const msgs={'auth/email-already-in-use':'Ya existe una cuenta con ese correo.','auth/invalid-email':'Correo no válido.','auth/weak-password':'La contraseña debe tener al menos 6 caracteres.','auth/user-not-found':'No existe cuenta con ese correo.','auth/wrong-password':'Contraseña incorrecta.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/too-many-requests':'Demasiados intentos. Espera un momento.'};
+    err.textContent=msgs[e.code]||'Error al autenticar.';
+  }
+});
+document.getElementById('aforgot').addEventListener('click',async()=>{
+  const email=document.getElementById('aemail').value.trim();
+  const err=document.getElementById('aerr');
+  if(!email){err.textContent='Ingresa tu correo primero.';return;}
+  try{await sendPasswordResetEmail(auth,email);err.style.color='var(--success)';err.textContent='Correo de restablecimiento enviado.';}
+  catch(e){err.style.color='var(--danger)';err.textContent='No se pudo enviar el correo.';}
 });
 
 // ── AUTH STATE ────────────────────────────────────────────
-const statusDot=document.getElementById('status-dot');
-const statusText=document.getElementById('status-text');
-
-onAuthStateChanged(auth, user=>{
+const sd=document.getElementById('sd'),st=document.getElementById('st');
+onAuthStateChanged(auth,user=>{
   if(user){
-    // Usuario autenticado → mostrar app
-    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('auth').style.display='none';
     document.getElementById('app').style.display='block';
-    document.getElementById('user-email').textContent=user.email;
-
-    // Desconectar listener anterior si existía
-    if(currentDataRef && currentListener){ off(currentDataRef, 'value', currentListener); }
-
-    // Apuntar a los datos de este usuario específico
-    currentDataRef=ref(db, `users/${user.uid}/agenda`);
-    loaded=false; tasks=[]; history=[]; recurring=[]; idCounter=1; recurIdCounter=1; lastReset='';
-
-    currentListener=onValue(currentDataRef, snapshot=>{
-      const data=snapshot.val();
-      isRemoteUpdate=true;
-      if(data){
-        tasks=data.tasks||[]; history=data.history||[]; recurring=data.recurring||[];
-        idCounter=data.idCounter||1; recurIdCounter=data.recurIdCounter||1; lastReset=data.lastReset||'';
-        isPro=data.isPro||false;
-      }
-      loaded=true;
-      statusDot.classList.add('online');
-      statusText.textContent='Sincronizado';
-      weeklyReset(); render();
-      isRemoteUpdate=false;
-    }, ()=>{ statusText.textContent='Error de conexión'; });
-
-    // Reset semanal automático cada minuto
-    setInterval(()=>{
-      if(!loaded) return;
-      if(lastReset!==getWeekKey()){ weeklyReset(); render(); persist(); }
-    }, 60000);
-
-  } else {
-    // No autenticado → mostrar login
+    document.getElementById('ue').textContent=user.email;
+    if(curRef&&curListener)off(curRef,'value',curListener);
+    curRef=ref(db,`users/${user.uid}/agenda`);
+    loaded=false;tasks=[];history=[];recurring=[];idCounter=1;recurIdCounter=1;lastReset='';isPro=false;
+    curListener=onValue(curRef,snap=>{
+      const data=snap.val();
+      isRemote=true;
+      if(data){tasks=data.tasks||[];history=data.history||[];recurring=data.recurring||[];idCounter=data.idCounter||1;recurIdCounter=data.recurIdCounter||1;lastReset=data.lastReset||'';isPro=data.isPro||false;}
+      loaded=true;sd.classList.add('on');st.textContent='Sincronizado';
+      weeklyReset();render();isRemote=false;
+    },()=>{st.textContent='Error de conexión';});
+    setInterval(()=>{if(!loaded)return;if(lastReset!==getWeekKey()){weeklyReset();render();persist();}},60000);
+  }else{
     loaded=false;
-    if(currentDataRef && currentListener){ off(currentDataRef,'value',currentListener); }
+    if(curRef&&curListener)off(curRef,'value',curListener);
     document.getElementById('app').style.display='none';
-    document.getElementById('auth-screen').style.display='flex';
-    document.getElementById('auth-error').textContent='';
-    document.getElementById('auth-email').value='';
-    document.getElementById('auth-password').value='';
+    document.getElementById('auth').style.display='flex';
+    document.getElementById('aerr').textContent='';
+    document.getElementById('aemail').value='';document.getElementById('apass').value='';
   }
 });
+
+// ── INSTALL PWA ───────────────────────────────────────────
+const ibtnw=document.getElementById('ibtnw');
+const imodal=document.getElementById('imodal');
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+const isAndroid=/android/i.test(navigator.userAgent);
+const isStandalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;ibtnw.style.display='flex';});
+if(isIOS&&!isStandalone)ibtnw.style.display='flex';
+if(isAndroid&&!isStandalone)setTimeout(()=>{if(!deferredPrompt)ibtnw.style.display='flex';},1000);
+ibtnw.addEventListener('click',()=>{
+  if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;ibtnw.style.display='none';});return;}
+  const desc=document.getElementById('idesc'),steps=document.getElementById('isteps');
+  if(isIOS){desc.textContent='Sigue estos pasos en Safari para instalar Planwik en tu iPhone:';steps.innerHTML='<div class="istep"><span class="inum">1</span><p>Toca el botón de <strong>Compartir</strong> (cuadrado con flecha ↑) en la barra inferior de Safari</p></div><div class="istep"><span class="inum">2</span><p>Desliza hacia abajo y toca <strong>"Agregar a pantalla de inicio"</strong></p></div><div class="istep"><span class="inum">3</span><p>Toca <strong>"Agregar"</strong> en la esquina superior derecha</p></div><div class="istep"><span class="inum">4</span><p>¡Listo! El ícono de <strong>Planwik</strong> aparece en tu pantalla de inicio</p></div>';}
+  else{desc.textContent='Sigue estos pasos en Chrome para instalar Planwik en tu Android:';steps.innerHTML='<div class="istep"><span class="inum">1</span><p>Toca los <strong>tres puntos</strong> (⋮) en la esquina superior derecha de Chrome</p></div><div class="istep"><span class="inum">2</span><p>Toca <strong>"Agregar a pantalla de inicio"</strong> o <strong>"Instalar aplicación"</strong></p></div><div class="istep"><span class="inum">3</span><p>Toca <strong>"Instalar"</strong> para confirmar</p></div><div class="istep"><span class="inum">4</span><p>¡Listo! El ícono de <strong>Planwik</strong> aparece en tu pantalla de inicio</p></div>';}
+  imodal.classList.add('open');
+});
+document.getElementById('iclose').addEventListener('click',()=>imodal.classList.remove('open'));
+imodal.addEventListener('click',e=>{if(e.target===imodal)imodal.classList.remove('open');});
 </script>
-<script>if('serviceWorker' in navigator){ window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js')); }</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));}</script>
 </body>
 </html>
-
-<style>
-#install-btn{
-  position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:200;
-  background:#1a4fd6; color:#fff;
-  border:none; border-radius:999px; padding:12px 22px;
-  font-size:14px; font-weight:600; cursor:pointer;
-  box-shadow:0 4px 20px rgba(26,79,214,0.4);
-  display:none; align-items:center; gap:8px;
-  white-space:nowrap;
-}
-#install-modal{
-  display:none; position:fixed; inset:0; z-index:300;
-  background:rgba(0,0,0,0.55); align-items:flex-end; justify-content:center;
-}
-#install-modal.open{ display:flex; }
-#install-box{
-  background:var(--surface-2,#fff); border-radius:20px 20px 0 0;
-  padding:1.5rem; width:100%; max-width:480px;
-  display:flex; flex-direction:column; gap:1rem;
-}
-#install-box h3{ font-size:17px; font-weight:600; margin:0; }
-#install-box p{ font-size:14px; color:#666; margin:0; line-height:1.6; }
-.install-step{
-  display:flex; align-items:flex-start; gap:12px;
-  background:#f5f7ff; border-radius:10px; padding:10px 12px;
-}
-.install-step .num{
-  background:#1a4fd6; color:#fff; border-radius:50%;
-  width:24px; height:24px; display:flex; align-items:center; justify-content:center;
-  font-size:12px; font-weight:700; flex-shrink:0; margin-top:1px;
-}
-.install-step p{ margin:0; font-size:13px; color:#333; }
-.install-step strong{ color:#1a4fd6; }
-#install-close{
-  background:#f1f0ee; border:none; border-radius:10px;
-  padding:12px; font-size:14px; font-weight:500; cursor:pointer; width:100%;
-}
-</style>
-
-<button id="install-btn">📲 Instalar en tu celular</button>
-
-<div id="install-modal">
-  <div id="install-box">
-    <h3 id="install-title">Instalar Planwik</h3>
-    <p id="install-desc"></p>
-    <div id="install-steps"></div>
-    <button id="install-close">Entendido</button>
-  </div>
-</div>
-
-<script>
-(function(){
-  const btn = document.getElementById('install-btn');
-  const modal = document.getElementById('install-modal');
-  const closeBtn = document.getElementById('install-close');
-  const stepsEl = document.getElementById('install-steps');
-  const descEl = document.getElementById('install-desc');
-
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isAndroid = /android/i.test(navigator.userAgent);
-  const isMobile = isIOS || isAndroid;
-  const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-  let deferredPrompt = null;
-
-  window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    deferredPrompt = e;
-    btn.style.display = 'flex';
-  });
-
-  // En iOS Safari siempre mostrar el botón si no está instalada
-  if(isIOS && !isInStandalone){
-    btn.style.display = 'flex';
-  }
-
-  // En Android sin beforeinstallprompt (algunos casos), mostrar igual
-  if(isAndroid && !isInStandalone){
-    setTimeout(() => { if(!deferredPrompt) btn.style.display = 'flex'; }, 1000);
-  }
-
-  btn.addEventListener('click', () => {
-    if(deferredPrompt){
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => { deferredPrompt = null; btn.style.display='none'; });
-      return;
-    }
-    if(isIOS){
-      descEl.textContent = 'Sigue estos pasos en Safari para instalar Planwik en tu iPhone:';
-      stepsEl.innerHTML = `
-        <div class="install-step"><span class="num">1</span><p>Toca el botón de <strong>Compartir</strong> (el cuadrado con flecha ↑) en la barra inferior de Safari</p></div>
-        <div class="install-step"><span class="num">2</span><p>Desliza hacia abajo y toca <strong>"Agregar a pantalla de inicio"</strong></p></div>
-        <div class="install-step"><span class="num">3</span><p>Toca <strong>"Agregar"</strong> en la esquina superior derecha</p></div>
-        <div class="install-step"><span class="num">4</span><p>¡Listo! El ícono de <strong>Planwik</strong> aparece en tu pantalla de inicio</p></div>`;
-    } else if(isAndroid){
-      descEl.textContent = 'Sigue estos pasos en Chrome para instalar Planwik en tu Android:';
-      stepsEl.innerHTML = `
-        <div class="install-step"><span class="num">1</span><p>Toca los <strong>tres puntos</strong> (⋮) en la esquina superior derecha de Chrome</p></div>
-        <div class="install-step"><span class="num">2</span><p>Toca <strong>"Agregar a pantalla de inicio"</strong> o <strong>"Instalar aplicación"</strong></p></div>
-        <div class="install-step"><span class="num">3</span><p>Toca <strong>"Instalar"</strong> para confirmar</p></div>
-        <div class="install-step"><span class="num">4</span><p>¡Listo! El ícono de <strong>Planwik</strong> aparece en tu pantalla de inicio</p></div>`;
-    }
-    modal.classList.add('open');
-  });
-
-  closeBtn.addEventListener('click', () => modal.classList.remove('open'));
-  modal.addEventListener('click', e => { if(e.target === modal) modal.classList.remove('open'); });
-})();
-</script>
