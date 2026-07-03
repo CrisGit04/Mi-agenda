@@ -508,7 +508,17 @@ onAuthStateChanged(auth,user=>{
     curLis=onValue(curRef,snap=>{
       const data=snap.val();
       isRemote=true;
-      if(data){tasks=data.tasks||[];history=data.history||[];recurring=data.recurring||[];idc=data.idc||1;ridc=data.ridc||1;lastReset=data.lastReset||'';isPro=data.isPro||false;}
+      if(data){
+        // Migrate old field names from Firebase
+        const migrate = arr => (arr||[]).map(t => ({...t, cat: t.cat||t.category||'trabajo'}));
+        tasks=migrate(data.tasks);
+        history=migrate(data.history);
+        recurring=(data.recurring||[]).map(r=>({...r, cat: r.cat||r.category||'trabajo'}));
+        idc=data.idc||data.idCounter||1;
+        ridc=data.ridc||data.recurIdCounter||1;
+        lastReset=data.lastReset||'';
+        isPro=data.isPro||false;
+      }
       loaded=true; sd.classList.add('on'); st.textContent='Sincronizado';
       weekReset(); render(); isRemote=false;
     },()=>{st.textContent='Error de conexión';});
