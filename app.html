@@ -202,8 +202,12 @@
         <option>Lunes</option><option>Martes</option><option>Miércoles</option>
         <option>Jueves</option><option>Viernes</option><option>Sábado</option><option>Domingo</option>
       </select>
-      <input id="t-due" type="date">
+      <div style="position:relative;">
+        <input id="t-due" type="date" style="width:100%; padding-left:32px;">
+        <span style="position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:14px; pointer-events:none;">📅</span>
+      </div>
     </div>
+    <p style="font-size:11px; color:var(--text-muted); margin:-4px 0 8px; text-align:right;">📅 Fecha límite (opcional)</p>
     <label id="recurring-label" style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; margin-bottom:8px;">
       <input id="t-recurring" type="checkbox" style="width:auto; height:auto;">
       <span>🔁 Tarea recurrente (elige los días que se repite)</span>
