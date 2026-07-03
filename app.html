@@ -510,10 +510,10 @@ onAuthStateChanged(auth,user=>{
       isRemote=true;
       if(data){
         // Migrate old field names from Firebase
-        const migrate = arr => (arr||[]).map(t => ({...t, cat: t.cat||t.category||'trabajo'}));
+        const migrate = arr => (arr||[]).map(t => ({...t, cat: t.cat||t.category||'trabajo', rid: t.rid||t.recurringId||null}));
         tasks=migrate(data.tasks);
         history=migrate(data.history);
-        recurring=(data.recurring||[]).map(r=>({...r, cat: r.cat||r.category||'trabajo'}));
+        recurring=(data.recurring||[]).map(r=>({...r, cat: r.cat||r.category||'trabajo', id: r.id}));
         idc=data.idc||data.idCounter||1;
         ridc=data.ridc||data.recurIdCounter||1;
         lastReset=data.lastReset||'';
