@@ -275,7 +275,11 @@ function rCard(r, insts){
   return `<div style="background:var(--s2);border:.5px solid var(--border);border-radius:var(--r);padding:8px 10px;margin-bottom:6px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px;">
       <p style="font-size:13px;font-weight:500;margin:0;flex:1;color:var(--t1);">🔁 ${r.name}</p>
-      <span style="font-size:11px;color:var(--tm);">${pend.length} pendiente${pend.length>1?'s':''}</span>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <span style="font-size:11px;color:var(--tm);">${pend.length} pendiente${pend.length>1?'s':''}</span>
+        <button class="ib" data-editrec="${r.id}" type="button" style="margin-left:6px;" title="Editar recurrente">✎</button>
+        <button class="ib" data-rmr="${r.id}" type="button" title="Eliminar recurrente">🗑</button>
+      </div>
     </div>
     <p style="font-size:11px;color:var(--tm);margin:0 0 8px;">Recurrente semanal</p>
     <div style="border-top:.5px solid var(--border);padding-top:6px;">
@@ -357,7 +361,43 @@ function doRestore(id){
   const t=history.splice(i,1)[0]; delete t.ca; delete t.cw; t.completed=false;
   tasks.push(t); render(); persist();
 }
-function doRemRec(id){ recurring=recurring.filter(r=>r.id!==id); tasks=tasks.filter(t=>t.rid!==id); render(); persist(); }
+function doRemRec(id){
+  if(!window.confirm('¿Eliminar esta tarea recurrente y todas sus instancias?'))return;
+  recurring=recurring.filter(r=>r.id!==id); tasks=tasks.filter(t=>t.rid!==id); render(); persist();
+}
+function doEditRec(id){
+  const r=recurring.find(x=>x.id===id); if(!r)return;
+  // Remove existing pending instances so they regenerate after edit
+  tasks=tasks.filter(t=>t.rid!==id);
+  // Remove from recurring list — will re-add on save
+  recurring=recurring.filter(x=>x.id!==id);
+  // Load into form
+  editId='rec:'+id;
+  document.getElementById('tn').value=r.name;
+  document.getElementById('tc').value=r.cat;
+  document.getElementById('tu').value=r.urgent?'1':'0';
+  document.getElementById('ti').value=r.important?'1':'0';
+  document.getElementById('trec').checked=true;
+  document.getElementById('rdays').style.display='flex';
+  document.getElementById('tdue').disabled=true;
+  selDays=[...r.days];
+  document.querySelectorAll('.dchip').forEach(c=>{
+    if(r.days.includes(c.getAttribute('data-day'))){c.style.background='var(--bga)';c.style.borderColor='var(--borda)';}
+    else{c.style.background='var(--s2)';c.style.borderColor='var(--border2)';}
+  });
+  document.getElementById('ftitle').textContent='✎ Editando recurrente';
+  document.getElementById('addbtn').textContent='✓ Guardar cambios';
+  document.getElementById('cancelbtn').style.display='inline-flex';
+  const toast=document.getElementById('toast');
+  toast.textContent=`Editando: ${r.name}`; toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2500);
+  const card=document.querySelector('.card');
+  window.scrollTo({top:window.pageYOffset+card.getBoundingClientRect().top-16,behavior:'smooth'});
+  card.style.transition='box-shadow .3s'; card.style.boxShadow='0 0 0 2px var(--accent)';
+  setTimeout(()=>{card.style.boxShadow='none';},1200);
+  document.getElementById('tn').focus();
+  render(); persist();
+}
 
 function doEdit(id){
   const t=tasks.find(x=>x.id===id); if(!t)return;
@@ -413,8 +453,22 @@ document.getElementById('addbtn').addEventListener('click',()=>{
   const important=document.getElementById('ti').value==='1';
   const due=document.getElementById('tdue').value;
   if(editId){
-    const t=tasks.find(x=>x.id===editId);
-    if(t){ t.name=name; t.cat=cat; t.urgent=urgent; t.important=important; if(!t.rid)t.due=due; }
+    if(editId.startsWith('rec:')){
+      // Saving an edited recurring def — treat as new recurring
+      const isRec2=document.getElementById('trec').checked;
+      if(isRec2&&selDays.length){
+        const oldId=editId.replace('rec:','');
+        recurring.push({id:oldId,name,cat,urgent,important,days:[...selDays]});
+        ensureRec();
+        document.getElementById('trec').checked=false;
+        document.getElementById('rdays').style.display='none';
+        document.getElementById('tdue').disabled=false;
+        selDays=[]; document.querySelectorAll('.dchip').forEach(c2=>{c2.style.background='var(--s2)';c2.style.borderColor='var(--border2)';});
+      }
+    } else {
+      const t=tasks.find(x=>x.id===editId);
+      if(t){ t.name=name; t.cat=cat; t.urgent=urgent; t.important=important; if(!t.rid)t.due=due; }
+    }
     resetForm(); render(); persist(); return;
   }
   if(document.getElementById('trec').checked){
@@ -446,6 +500,7 @@ document.getElementById('matrix').addEventListener('click',e=>{
   const dn=e.target.closest('[data-done]'); if(dn){doComplete(dn.getAttribute('data-done'));return;}
   const dl=e.target.closest('[data-del]'); if(dl){doDelete(dl.getAttribute('data-del'));return;}
   const ed=e.target.closest('[data-edit]'); if(ed){doEdit(ed.getAttribute('data-edit'));}
+  const er=e.target.closest('[data-editrec]'); if(er){doEditRec(er.getAttribute('data-editrec'));}
 });
 document.getElementById('history').addEventListener('click',e=>{
   const rb=e.target.closest('[data-rst]'); if(rb)doRestore(rb.getAttribute('data-rst'));
@@ -519,8 +574,16 @@ onAuthStateChanged(auth,user=>{
         lastReset=data.lastReset||'';
         isPro=data.isPro||false;
       }
-      loaded=true; sd.classList.add('on'); st.textContent='Sincronizado';
-      weekReset(); render(); isRemote=false;
+      // Deduplicate: remove old-style instances if new-style already exist for same rid+day
+const seen = new Set();
+tasks = tasks.filter(t => {
+  if(!t.rid) return true;
+  const key = t.rid + '|' + t.day;
+  if(seen.has(key)) return false;
+  seen.add(key); return true;
+});
+loaded=true; sd.classList.add('on'); st.textContent='Sincronizado';
+weekReset(); render(); isRemote=false;
     },()=>{st.textContent='Error de conexión';});
     setInterval(()=>{if(!loaded)return;if(lastReset!==wk()){weekReset();render();persist();}},60000);
   } else {
