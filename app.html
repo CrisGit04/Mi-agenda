@@ -7,24 +7,24 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.47.0/iconfont/tabler-icons.min.css">
 <style>
   :root{
-    --bg-page:#EEF2F8; --surface-1:#E4EAF4; --surface-2:#ffffff;
-    --border:#C8D4E8; --border-strong:#A8B8D0;
-    --text-primary:#0F1F3D; --text-secondary:#3A5080; --text-muted:#7A8FAD;
-    --accent:#1a4fd6; --bg-accent:#D8E4F8; --border-accent:#85B7EB;
-    --danger:#C0392B; --bg-danger:#FDECEA; --border-danger:#E8A0A0;
-    --success:#1A7A4A; --bg-success:#E8F5EE;
-    --warning:#8C6010; --bg-warning:#FDF3DC;
+    --bg-page:#F5F4F1; --surface-1:#EEEDE9; --surface-2:#ffffff;
+    --border:#E4E2DC; --border-strong:#C8C6BE;
+    --text-primary:#1A1A18; --text-secondary:#4A4A46; --text-muted:#A0A09A;
+    --accent:#1a4fd6; --bg-accent:#EEF3FF; --border-accent:#C0D4F8;
+    --danger:#C0392B; --bg-danger:#F5C5C0; --border-danger:#E8A098;
+    --success:#1A7A4A; --bg-success:#C0D0F0;
+    --warning:#9A6B00; --bg-warning:#F5E0A0;
     --radius:8px;
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --bg-page:#0A1220; --surface-1:#0F1F3D; --surface-2:#162848;
-      --border:#1E3560; --border-strong:#2A4A80;
-      --text-primary:#E8F0FA; --text-secondary:#A8C4E8; --text-muted:#6A8CB8;
+      --bg-page:#1A1A18; --surface-1:#242420; --surface-2:#2E2E2A;
+      --border:#3A3A36; --border-strong:#4A4A46;
+      --text-primary:#F0EDE8; --text-secondary:#B0ADA8; --text-muted:#707068;
       --accent:#85b7eb; --bg-accent:#0c447c; --border-accent:#378add;
-      --danger:#f7c1c1; --bg-danger:#791f1f;
-      --success:#9fe1cb; --bg-success:#085041;
-      --warning:#fac775; --bg-warning:#854f0b;
+      --danger:#f7c1c1; --bg-danger:#6A2020;
+      --success:#9fe1cb; --bg-success:#083060;
+      --warning:#fac775; --bg-warning:#6A4A00;
     }
   }
   *{ box-sizing:border-box; }
@@ -351,10 +351,10 @@ function quadrant(t){
   return 'q4';
 }
 const quadrantMeta = {
-  q1:{ title:'Hacer ahora', sub:'Urgente + importante', bg:'#0F1F3D', titleColor:'#E8F0FA', subColor:'#6A8CB8' },
-  q2:{ title:'Planificar', sub:'No urgente + importante', bg:'#1B3A6B', titleColor:'#C8DCFA', subColor:'#5A7AAA' },
-  q3:{ title:'Delegar', sub:'Urgente + no importante', bg:'#ffffff', titleColor:'#0F1F3D', subColor:'#7A8FAD' },
-  q4:{ title:'Posponer', sub:'No urgente + no importante', bg:'#EEF2F8', titleColor:'#4A6080', subColor:'#9AAAC0' }
+  q1:{ title:'Hacer ahora', sub:'Urgente + importante', bg:'#F5C5C0', titleColor:'#7A1A12', subColor:'#C06060' },
+  q2:{ title:'Planificar', sub:'No urgente + importante', bg:'#C0D0F0', titleColor:'#0A2A60', subColor:'#4060A0' },
+  q3:{ title:'Delegar', sub:'Urgente + no importante', bg:'#F5E0A0', titleColor:'#5A3800', subColor:'#9A7020' },
+  q4:{ title:'Posponer', sub:'No urgente + no importante', bg:'#D8D8D8', titleColor:'#484848', subColor:'#909090' }
 };
 
 function daysUntil(d){ if(!d) return null; return (new Date(d+'T23:59:59')-new Date())/36e5; }
@@ -403,19 +403,17 @@ function weeklyReset(){
 
 function taskCard(t){
   const hrs=daysUntil(t.dueDate), isAlert=hrs!==null&&hrs<=48;
-  const qid = quadrant(t);
-  const isDark = qid === 'q1' || qid === 'q2';
-  const chipBg = isDark ? 'rgba(255,255,255,0.09)' : 'var(--surface-2)';
-  const chipBorder = isDark ? 'rgba(255,255,255,0.14)' : 'var(--border)';
-  const nameColor = isDark ? '#C8D8F0' : 'var(--text-primary)';
-  const metaColor = isDark ? '#6A8CB8' : 'var(--text-muted)';
-  return `<div style="background:${chipBg}; border:0.5px solid ${isAlert ? 'var(--border-danger)' : chipBorder}; border-radius:var(--radius); padding:8px 10px; display:flex; flex-direction:column; gap:4px; margin-bottom:6px;">
+  const chipBg = 'rgba(255,255,255,0.55)';
+  const chipBorder = 'rgba(0,0,0,0.08)';
+  const nameColor = '#2A2A28';
+  const metaColor = '#6A6A66';
+  return `<div style="background:${chipBg}; border:0.5px solid ${isAlert ? 'var(--danger)' : chipBorder}; border-radius:var(--radius); padding:8px 10px; display:flex; flex-direction:column; gap:4px; margin-bottom:6px;">
     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
       <p style="font-size:13px; font-weight:500; margin:0; flex:1; min-width:0; color:${nameColor};">${t.recurringId?'🔁 ':''}${t.name}</p>
       <div style="display:flex; gap:4px; flex-shrink:0;">
-        <button class="icon-btn" data-edit="${t.id}" type="button" style="color:${isDark?'#A8C4E8':'var(--text-secondary)'}; border-color:${chipBorder}; background:${isDark?'rgba(255,255,255,0.06)':'var(--surface-1)'};" aria-label="Editar tarea">✎</button>
-        <button class="icon-btn" data-complete="${t.id}" type="button" style="color:${isDark?'#A8C4E8':'var(--text-secondary)'}; border-color:${chipBorder}; background:${isDark?'rgba(255,255,255,0.06)':'var(--surface-1)'};" aria-label="Completar tarea">✓</button>
-        <button class="icon-btn" data-delete="${t.id}" type="button" style="color:${isDark?'#A8C4E8':'var(--text-secondary)'}; border-color:${chipBorder}; background:${isDark?'rgba(255,255,255,0.06)':'var(--surface-1)'};" aria-label="Eliminar tarea">🗑</button>
+        <button class="icon-btn" data-edit="${t.id}" type="button" style="color:#6A6A66; border-color:rgba(0,0,0,0.12); background:rgba(255,255,255,0.5);" aria-label="Editar tarea">✎</button>
+        <button class="icon-btn" data-complete="${t.id}" type="button" style="color:#6A6A66; border-color:rgba(0,0,0,0.12); background:rgba(255,255,255,0.5);" aria-label="Completar tarea">✓</button>
+        <button class="icon-btn" data-delete="${t.id}" type="button" style="color:#6A6A66; border-color:rgba(0,0,0,0.12); background:rgba(255,255,255,0.5);" aria-label="Eliminar tarea">🗑</button>
       </div>
     </div>
     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
