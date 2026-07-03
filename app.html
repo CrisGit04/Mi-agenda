@@ -374,10 +374,21 @@ function persist(){
 }
 
 function ensureRecurringInstances(){
+  const currentWeek = getWeekKey();
   recurring.forEach(r => {
     r.days.forEach(d => {
-      const exists = tasks.some(t => t.recurringId===r.id && t.day===d);
-      if(!exists) tasks.push({ id:'task-'+(idCounter++), name:r.name, category:r.category, effort:r.effort, urgent:r.urgent, important:r.important, day:d, dueDate:'', completed:false, recurringId:r.id });
+      // No recrear si ya existe pendiente
+      const pendingExists = tasks.some(t => t.recurringId===r.id && t.day===d && !t.completed);
+      if(pendingExists) return;
+      // No recrear si está en tránsito (completed=true pero aún no movida al historial)
+      const inTransit = tasks.some(t => t.recurringId===r.id && t.day===d && t.completed);
+      if(inTransit) return;
+      // No recrear si ya fue completada esta semana (está en historial con completedWeek actual)
+      const completedThisWeek = history.some(t =>
+        t.recurringId===r.id && t.day===d && t.completedWeek===currentWeek
+      );
+      if(completedThisWeek) return;
+      tasks.push({ id:'task-'+(idCounter++), name:r.name, category:r.category, effort:r.effort, urgent:r.urgent, important:r.important, day:d, dueDate:'', completed:false, recurringId:r.id });
     });
   });
 }
@@ -474,7 +485,7 @@ function render(){
 function completeTask(id){
   const t=tasks.find(x=>x.id===id); if(!t||t.completed) return;
   t.completed=true; render(); persist();
-  setTimeout(()=>{ t.completedAt=new Date().toISOString(); tasks=tasks.filter(x=>x.id!==id); history.push(t); render(); persist(); }, 2500);
+  setTimeout(()=>{ t.completedAt=new Date().toISOString(); t.completedWeek=getWeekKey(); tasks=tasks.filter(x=>x.id!==id); history.push(t); render(); persist(); }, 2500);
 }
 
 function deleteTask(id){
