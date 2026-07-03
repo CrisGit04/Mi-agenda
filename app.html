@@ -39,6 +39,7 @@ button:hover{background:var(--s1);}
 .card{background:var(--s2);border:.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem;}
 .row{display:grid;gap:8px;margin-bottom:8px;}
 .r3{grid-template-columns:2fr 1fr 1fr;}
+.r2{grid-template-columns:2fr 1fr;}
 .r4{grid-template-columns:1fr 1fr 1fr 1fr;}
 .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;}
 .metric{background:var(--s1);border-radius:var(--r);padding:1rem;}
@@ -152,15 +153,15 @@ button:hover{background:var(--s1);}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <p id="ftitle" style="font-size:14px;font-weight:500;margin:0;">Nueva tarea</p>
     </div>
-    <div class="row r3">
+    <div class="row r2">
       <input id="tn" type="text" placeholder="Nombre de la tarea">
       <select id="tc"><option value="trabajo">Trabajo</option><option value="personal">Personal</option><option value="proyecto">Proyecto especial</option></select>
-      <select id="tef"><option value="corto">Esfuerzo corto</option><option value="medio" selected>Esfuerzo medio</option><option value="largo">Esfuerzo largo</option></select>
+
     </div>
-    <div class="row r4">
+    <div class="row r3">
       <select id="tu"><option value="1">Urgente</option><option value="0">No urgente</option></select>
       <select id="ti"><option value="1">Importante</option><option value="0">No importante</option></select>
-      <select id="td"><option value="">Día (opcional)</option><option>Lunes</option><option>Martes</option><option>Miércoles</option><option>Jueves</option><option>Viernes</option><option>Sábado</option><option>Domingo</option></select>
+
       <div style="position:relative;"><input id="tdue" type="date" style="width:100%;padding-left:32px;"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none;">📅</span></div>
     </div>
     <p style="font-size:11px;color:var(--tm);margin:-4px 0 8px;text-align:right;">📅 Fecha límite (opcional)</p>
@@ -275,7 +276,7 @@ function ensureRecurring(){
       if(tasks.some(t=>t.recurringId===r.id&&t.day===d&&!t.completed))return;
       if(tasks.some(t=>t.recurringId===r.id&&t.day===d&&t.completed))return;
       if(history.some(t=>t.recurringId===r.id&&t.day===d&&t.completedWeek===cw))return;
-      tasks.push({id:'t'+(idCounter++),name:r.name,category:r.category,effort:r.effort,urgent:r.urgent,important:r.important,day:d,dueDate:'',completed:false,recurringId:r.id});
+      tasks.push({id:'t'+(idCounter++),name:r.name,category:r.category,effort:r.urgent:r.urgent,important:r.important,day:d,dueDate:'',completed:false,recurringId:r.id});
     });
   });
 }
@@ -301,9 +302,9 @@ function taskCard(t){
     </div>
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
       <span class="${catClass[t.category]}" style="font-size:11px;padding:2px 8px;border-radius:var(--r);font-weight:500;">${catLabel[t.category]}</span>
-      <span style="font-size:11px;color:var(--tm);">${effortLabel[t.effort]}</span>
+      <span style="font-size:11px;color:var(--tm);"></span>
       ${t.dueDate?`<span style="font-size:11px;${alert?'color:var(--danger);font-weight:500;':'color:var(--tm);'}">${alert?'⚠ ':''}${fmtDate(t.dueDate)}</span>`:''}
-      ${t.day?`<span style="font-size:11px;color:var(--tm);">${t.day}</span>`:''}
+      
     </div>
   </div>`;
 }
@@ -418,7 +419,7 @@ function startEdit(id){
   document.getElementById('tef').value=t.effort;
   document.getElementById('tu').value=t.urgent?'1':'0';
   document.getElementById('ti').value=t.important?'1':'0';
-  document.getElementById('td').value=t.day||'';
+  
   document.getElementById('tdue').value=t.dueDate||'';
   document.getElementById('ftitle').textContent='✎ Editando tarea';
   document.getElementById('addbtn').textContent='✓ Guardar cambios';
@@ -438,7 +439,7 @@ function resetForm(){
   editingId=null;
   ['tn','tdue','td'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('tc').value='trabajo';
-  document.getElementById('tef').value='medio';
+  
   document.getElementById('tu').value='1';
   document.getElementById('ti').value='1';
   document.getElementById('ftitle').textContent='Nueva tarea';
@@ -451,7 +452,7 @@ function resetForm(){
 document.getElementById('cancelbtn').addEventListener('click',resetForm);
 document.getElementById('trec').addEventListener('change',e=>{
   document.getElementById('rdays').style.display=e.target.checked?'flex':'none';
-  document.getElementById('td').disabled=e.target.checked;
+  
   document.getElementById('tdue').disabled=e.target.checked;
 });
 document.getElementById('rdays').addEventListener('click',e=>{
@@ -463,23 +464,23 @@ document.getElementById('rdays').addEventListener('click',e=>{
 document.getElementById('addbtn').addEventListener('click',()=>{
   const name=document.getElementById('tn').value.trim();if(!name)return;
   const category=document.getElementById('tc').value;
-  const effort=document.getElementById('tef').value;
+  
   const urgent=document.getElementById('tu').value==='1';
   const important=document.getElementById('ti').value==='1';
   if(editingId){
     const t=tasks.find(x=>x.id===editingId);
-    if(t){Object.assign(t,{name,category,effort,urgent,important});
+    if(t){Object.assign(t,{name,category,urgent,important});
       if(!t.recurringId){t.day=document.getElementById('td').value;t.dueDate=document.getElementById('tdue').value;}}
     resetForm();render();persist();return;
   }
   const isRec=document.getElementById('trec').checked;
   if(isRec){
     if(!selDays.length)return;
-    recurring.push({id:'r'+(recurIdCounter++),name,category,effort,urgent,important,days:[...selDays]});
+    recurring.push({id:'r'+(recurIdCounter++),name,category,urgent,important,days:[...selDays]});
     ensureRecurring();
     document.getElementById('trec').checked=false;
     document.getElementById('rdays').style.display='none';
-    document.getElementById('td').disabled=false;document.getElementById('tdue').disabled=false;
+    document.getElementById('tdue').disabled=false;
     selDays=[];document.querySelectorAll('.daychip').forEach(c=>{c.style.background='var(--s2)';c.style.borderColor='var(--border2)';});
   }else{
     const pending=tasks.filter(t=>!t.completed);
@@ -489,9 +490,9 @@ document.getElementById('addbtn').addEventListener('click',()=>{
       b.innerHTML=`<span style="font-size:13px;color:var(--danger);flex:1;">Límite de ${FREE_LIMIT} tareas alcanzado.</span><a href="${FLOW_LINK}" target="_blank" style="font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;white-space:nowrap;">⬆ Upgrade a Pro</a>`;
       setTimeout(()=>render(),3000);return;
     }
-    tasks.push({id:'t'+(idCounter++),name,category,effort,urgent,important,day:document.getElementById('td').value,dueDate:document.getElementById('tdue').value,completed:false});
+    tasks.push({id:'t'+(idCounter++),name,category,urgent,important,dueDate:document.getElementById('tdue').value,completed:false});
   }
-  document.getElementById('tn').value='';document.getElementById('tdue').value='';document.getElementById('td').value='';
+  document.getElementById('tn').value='';document.getElementById('tdue').value='';
   render();persist();
 });
 document.getElementById('htoggle').addEventListener('click',()=>{
