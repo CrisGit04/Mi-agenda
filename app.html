@@ -499,8 +499,9 @@ document.getElementById('hclear').addEventListener('click',()=>{history=[];rende
 document.getElementById('matrix').addEventListener('click',e=>{
   const dn=e.target.closest('[data-done]'); if(dn){doComplete(dn.getAttribute('data-done'));return;}
   const dl=e.target.closest('[data-del]'); if(dl){doDelete(dl.getAttribute('data-del'));return;}
+  const rmr=e.target.closest('[data-rmr]'); if(rmr){doRemRec(rmr.getAttribute('data-rmr'));return;}
+  const er=e.target.closest('[data-editrec]'); if(er){doEditRec(er.getAttribute('data-editrec'));return;}
   const ed=e.target.closest('[data-edit]'); if(ed){doEdit(ed.getAttribute('data-edit'));}
-  const er=e.target.closest('[data-editrec]'); if(er){doEditRec(er.getAttribute('data-editrec'));}
 });
 document.getElementById('history').addEventListener('click',e=>{
   const rb=e.target.closest('[data-rst]'); if(rb)doRestore(rb.getAttribute('data-rst'));
