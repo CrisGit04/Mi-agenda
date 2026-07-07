@@ -816,16 +816,18 @@ document.getElementById('ai-confirm').addEventListener('click', () => {
     return;
   }
   const taskName = aiPreview.name;
-  tasks.push({
+  const newTask = {
     id: 't'+(idc++),
     name: aiPreview.name,
-    cat: aiPreview.category || 'trabajo',
-    urgent: aiPreview.urgent,
-    important: aiPreview.important,
+    cat: aiPreview.category || aiPreview.cat || 'trabajo',
+    urgent: Boolean(aiPreview.urgent),
+    important: Boolean(aiPreview.important),
     day: '',
     due: aiPreview.dueDate || '',
     completed: false
-  });
+  };
+  console.log('Adding AI task:', newTask);
+  tasks.push(newTask);
   render(); persist();
   // Reset panel
   document.getElementById('ai-panel').classList.remove('open');
