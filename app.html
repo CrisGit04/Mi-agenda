@@ -309,7 +309,7 @@ function render(){
     ban.innerHTML=`<span style="font-size:12px;color:var(--success);">✦ Planwik Pro activo — tareas ilimitadas</span>`;
   } else {
     const rem=Math.max(0,FREE-pend.length);
-    ban.innerHTML=`<span style="font-size:12px;color:var(--tm);">Plan gratuito: ${pend.length}/${FREE} tareas</span>${rem===0?`<a href="${FLOW}" target="_blank" style="font-size:12px;font-weight:600;color:var(--accent);text-decoration:none;margin-left:12px;">⬆ Upgrade a Pro — $4.990/mes</a>`:''}`;
+    ban.innerHTML=`<span style="font-size:12px;color:var(--tm);">Plan gratuito: ${pend.length}/${FREE} tareas</span>${rem===0?`<a href="${FLOW}" target="_blank" style="font-size:12px;font-weight:600;color:var(--accent);text-decoration:none;margin-left:12px;">⬆ Upgrade a Pro — $3.990/mes</a>`:''}`;
   }
   // metrics
   const q1=pend.filter(t=>Q(t)==='q1');
