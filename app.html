@@ -79,6 +79,33 @@ button{cursor:pointer;}button:hover{background:var(--s1);}
 #ah{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;}
 #ah h1{margin:0;font-size:20px;font-weight:500;display:flex;align-items:center;gap:8px;}
 #ue{font-size:12px;color:var(--tm);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── AI PANEL ── */
+#ai-panel{
+  background:var(--s2);border:.5px solid var(--border);border-radius:12px;
+  padding:1rem 1.25rem;margin-bottom:1.5rem;display:none;flex-direction:column;gap:10px;
+}
+#ai-panel.open{display:flex;}
+#ai-input{width:100%;min-height:72px;border-radius:var(--r);border:.5px solid var(--border2);
+  background:var(--s1);color:var(--t1);padding:10px;font-size:14px;font-family:inherit;
+  resize:none;line-height:1.5;}
+#ai-input:focus{outline:none;border-color:var(--accent);}
+#ai-actions{display:flex;gap:8px;align-items:center;}
+#mic-btn{width:36px;height:36px;border-radius:50%;border:.5px solid var(--border2);
+  background:var(--s1);display:flex;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;flex-shrink:0;transition:all .2s;}
+#mic-btn.recording{background:#e53935;border-color:#e53935;animation:pulse .8s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+#ai-send{flex:1;font-weight:500;background:var(--accent);color:#fff;border:none;}
+#ai-preview{background:var(--s1);border-radius:var(--r);padding:10px 12px;
+  border:.5px solid var(--border);display:none;flex-direction:column;gap:8px;}
+#ai-preview.show{display:flex;}
+.preview-row{display:flex;align-items:center;gap:8px;font-size:13px;}
+.preview-label{color:var(--tm);min-width:80px;font-size:12px;}
+.preview-val{color:var(--t1);font-weight:500;}
+#ai-confirm{background:var(--accent);color:#fff;border:none;font-weight:500;width:100%;}
+#ai-loading{font-size:13px;color:var(--tm);text-align:center;display:none;}
+
 #ibtn{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;background:#1a4fd6;color:#fff;border:none;border-radius:999px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(26,79,214,.4);display:none;align-items:center;gap:8px;white-space:nowrap;}
 #imodal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center;}
 #imodal.open{display:flex;}
@@ -137,7 +164,29 @@ button{cursor:pointer;}button:hover{background:var(--s1);}
   <div id="banner" style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;padding:8px 12px;background:var(--s1);border-radius:var(--r);border:.5px solid var(--border);"></div>
 
   <div class="card">
-    <p id="ftitle" style="font-size:14px;font-weight:500;margin:0 0 12px;">Nueva tarea</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <p id="ftitle" style="font-size:14px;font-weight:500;margin:0;">Nueva tarea</p>
+      <button id="ai-toggle" type="button" style="font-size:12px;padding:4px 12px;height:auto;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:999px;font-weight:500;cursor:pointer;">✨ Ingresar con IA</button>
+    </div>
+
+    <div id="ai-panel">
+      <p style="font-size:12px;color:var(--tm);margin:0;">Describe tu tarea en lenguaje natural — la IA la clasifica automáticamente</p>
+      <textarea id="ai-input" placeholder="Ej: Tengo reunión urgente con el cliente el viernes, necesito preparar la presentación antes..."></textarea>
+      <div id="ai-actions">
+        <button id="mic-btn" type="button" title="Dictar por voz">🎤</button>
+        <button id="ai-send" type="button">✨ Analizar con IA</button>
+        <button id="ai-cancel" type="button" style="font-size:13px;padding:4px 10px;height:auto;">✕</button>
+      </div>
+      <div id="ai-loading">⏳ Analizando tu tarea...</div>
+      <div id="ai-preview">
+        <p style="font-size:12px;font-weight:500;color:var(--t2);margin:0;">Vista previa — confirma antes de agregar:</p>
+        <div class="preview-row"><span class="preview-label">Tarea</span><span class="preview-val" id="pv-name"></span></div>
+        <div class="preview-row"><span class="preview-label">Categoría</span><span class="preview-val" id="pv-cat"></span></div>
+        <div class="preview-row"><span class="preview-label">Prioridad</span><span class="preview-val" id="pv-prio"></span></div>
+        <div class="preview-row"><span class="preview-label">Fecha</span><span class="preview-val" id="pv-date"></span></div>
+        <button id="ai-confirm" type="button">+ Agregar esta tarea</button>
+      </div>
+    </div>
     <div class="g2">
       <input id="tn" type="text" placeholder="Nombre de la tarea">
       <select id="tc">
@@ -622,6 +671,168 @@ ibtn.addEventListener('click',()=>{
 document.getElementById('iclose').addEventListener('click',()=>document.getElementById('imodal').classList.remove('open'));
 document.getElementById('imodal').addEventListener('click',e=>{if(e.target===document.getElementById('imodal'))document.getElementById('imodal').classList.remove('open');});
 </script>
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));}</script>
+<script>
+// ── AI TASK CAPTURE ───────────────────────────────────────
+let aiPreview = null;
+let isRecording = false;
+let recognition = null;
+
+document.getElementById('ai-toggle').addEventListener('click', () => {
+  const panel = document.getElementById('ai-panel');
+  panel.classList.toggle('open');
+  if(panel.classList.contains('open')) document.getElementById('ai-input').focus();
+});
+
+document.getElementById('ai-cancel').addEventListener('click', () => {
+  document.getElementById('ai-panel').classList.remove('open');
+  document.getElementById('ai-input').value = '';
+  document.getElementById('ai-preview').classList.remove('show');
+  document.getElementById('ai-loading').style.display = 'none';
+  aiPreview = null;
+});
+
+// Voz
+document.getElementById('mic-btn').addEventListener('click', () => {
+  if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)){
+    alert('Tu navegador no soporta dictado por voz. Usa Chrome.');
+    return;
+  }
+  if(isRecording){
+    recognition.stop();
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'es-CL';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.onstart = () => {
+    isRecording = true;
+    document.getElementById('mic-btn').classList.add('recording');
+    document.getElementById('mic-btn').textContent = '⏹';
+  };
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    document.getElementById('ai-input').value = transcript;
+  };
+  recognition.onend = () => {
+    isRecording = false;
+    document.getElementById('mic-btn').classList.remove('recording');
+    document.getElementById('mic-btn').textContent = '🎤';
+  };
+  recognition.onerror = () => {
+    isRecording = false;
+    document.getElementById('mic-btn').classList.remove('recording');
+    document.getElementById('mic-btn').textContent = '🎤';
+  };
+  recognition.start();
+});
+
+// Llamada a Claude API
+document.getElementById('ai-send').addEventListener('click', async () => {
+  const text = document.getElementById('ai-input').value.trim();
+  if(!text) return;
+
+  document.getElementById('ai-loading').style.display = 'block';
+  document.getElementById('ai-preview').classList.remove('show');
+  document.getElementById('ai-send').disabled = true;
+
+  const today = new Date().toISOString().split('T')[0];
+  const prompt = `Analiza esta descripción de tarea y extrae la información en formato JSON.
+
+Descripción: "${text}"
+
+Fecha de hoy: ${today}
+
+Responde SOLO con un JSON válido con esta estructura exacta:
+{
+  "name": "nombre corto y claro de la tarea (máx 60 caracteres)",
+  "category": "trabajo" | "personal" | "proyecto",
+  "urgent": true | false,
+  "important": true | false,
+  "dueDate": "YYYY-MM-DD" | null,
+  "reasoning": "explicación breve de por qué clasificaste así (1 línea)"
+}
+
+Reglas:
+- urgent = true si hay palabras como urgente, hoy, ya, inmediato, deadline cercano
+- important = true si tiene impacto en objetivos, clientes, negocio o metas
+- category trabajo si es laboral, personal si es vida personal, proyecto si es un proyecto especial
+- dueDate solo si hay fecha explícita o relativa (mañana, viernes, etc)
+- Si menciona "viernes" y hoy es ${new Date().toLocaleDateString('es-CL', {weekday:'long'})}, calcula la fecha correcta`;
+
+  try {
+    const res = await fetch('https://planwik-ai.cristobal-alarcon4.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if(!res.ok) throw new Error('Worker error: ' + res.status);
+    const data = await res.json();
+    const raw = data.content[0].text;
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('No JSON found');
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    aiPreview = parsed;
+    const catLabels = { trabajo:'Trabajo', personal:'Personal', proyecto:'Proyecto especial' };
+    const qLabels = {
+      'true,true': '🔴 Hacer ahora (Urgente + Importante)',
+      'false,true': '🟢 Planificar (No urgente + Importante)',
+      'true,false': '🟡 Delegar (Urgente + No importante)',
+      'false,false': '⚪ Posponer (No urgente + No importante)',
+    };
+    const qKey = `${parsed.urgent},${parsed.important}`;
+
+    document.getElementById('pv-name').textContent = parsed.name;
+    document.getElementById('pv-cat').textContent = catLabels[parsed.category] || parsed.category;
+    document.getElementById('pv-prio').textContent = qLabels[qKey] || qKey;
+    document.getElementById('pv-date').textContent = parsed.dueDate || 'Sin fecha';
+    document.getElementById('ai-preview').classList.add('show');
+
+  } catch(e) {
+    alert('Error al analizar. Intenta de nuevo o agrega la tarea manualmente.');
+    console.error(e);
+  } finally {
+    document.getElementById('ai-loading').style.display = 'none';
+    document.getElementById('ai-send').disabled = false;
+  }
+});
+
+// Confirmar y agregar tarea desde IA
+document.getElementById('ai-confirm').addEventListener('click', () => {
+  if(!aiPreview) return;
+  const pend = tasks.filter(t=>!t.completed);
+  if(!isPro && pend.length >= FREE) {
+    alert(`Límite de ${FREE} tareas alcanzado. Haz upgrade a Pro.`);
+    return;
+  }
+  tasks.push({
+    id: 't'+(idc++),
+    name: aiPreview.name,
+    cat: aiPreview.category,
+    urgent: aiPreview.urgent,
+    important: aiPreview.important,
+    day: '',
+    due: aiPreview.dueDate || '',
+    completed: false
+  });
+  render(); persist();
+  // Reset panel
+  document.getElementById('ai-panel').classList.remove('open');
+  document.getElementById('ai-input').value = '';
+  document.getElementById('ai-preview').classList.remove('show');
+  aiPreview = null;
+  // Toast
+  const toast = document.getElementById('toast');
+  toast.textContent = `✨ Tarea agregada por IA: ${aiPreview ? aiPreview.name : ''}`;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+});
+
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));}</script>
 </body>
 </html>
