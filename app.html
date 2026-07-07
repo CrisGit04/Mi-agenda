@@ -670,8 +670,8 @@ ibtn.addEventListener('click',()=>{
 });
 document.getElementById('iclose').addEventListener('click',()=>document.getElementById('imodal').classList.remove('open'));
 document.getElementById('imodal').addEventListener('click',e=>{if(e.target===document.getElementById('imodal'))document.getElementById('imodal').classList.remove('open');});
-</script>
-<script>
+
+
 // ── AI TASK CAPTURE ───────────────────────────────────────
 let aiPreview = null;
 let isRecording = false;
@@ -841,6 +841,7 @@ document.getElementById('ai-confirm').addEventListener('click', () => {
   setTimeout(() => toast.classList.remove('show'), 2500);
 });
 
+</script>
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js'));}</script>
 </body>
 </html>
