@@ -815,10 +815,11 @@ document.getElementById('ai-confirm').addEventListener('click', () => {
     alert(`Límite de ${FREE} tareas alcanzado. Haz upgrade a Pro.`);
     return;
   }
+  const taskName = aiPreview.name;
   tasks.push({
     id: 't'+(idc++),
     name: aiPreview.name,
-    cat: aiPreview.category,
+    cat: aiPreview.category || 'trabajo',
     urgent: aiPreview.urgent,
     important: aiPreview.important,
     day: '',
@@ -833,7 +834,7 @@ document.getElementById('ai-confirm').addEventListener('click', () => {
   aiPreview = null;
   // Toast
   const toast = document.getElementById('toast');
-  toast.textContent = `✨ Tarea agregada por IA: ${aiPreview ? aiPreview.name : ''}`;
+  toast.textContent = `✨ Tarea agregada: ${taskName}`;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2500);
 });
