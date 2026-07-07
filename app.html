@@ -772,6 +772,11 @@ Reglas:
 
     if(!res.ok) throw new Error('Worker error: ' + res.status);
     const data = await res.json();
+    // Debug: log what we got
+    console.log('Worker response:', JSON.stringify(data));
+    if(!data.content || !data.content[0]) {
+      throw new Error('Respuesta inválida: ' + JSON.stringify(data));
+    }
     const raw = data.content[0].text;
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if(!jsonMatch) throw new Error('No JSON found');
