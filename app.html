@@ -694,38 +694,67 @@ document.getElementById('ai-cancel').addEventListener('click', () => {
 // Voz
 document.getElementById('mic-btn').addEventListener('click', () => {
   if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)){
-    alert('Tu navegador no soporta dictado por voz. Usa Chrome.');
+    alert('Tu navegador no soporta dictado por voz. Usa Chrome o Safari.');
     return;
   }
   if(isRecording){
-    recognition.stop();
+    if(recognition) recognition.stop();
     return;
   }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
   recognition.lang = 'es-CL';
-  recognition.continuous = false;
-  recognition.interimResults = false;
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  const micBtn = document.getElementById('mic-btn');
+  const aiInput = document.getElementById('ai-input');
+  let finalTranscript = '';
+
   recognition.onstart = () => {
     isRecording = true;
-    document.getElementById('mic-btn').classList.add('recording');
-    document.getElementById('mic-btn').textContent = '⏹';
+    micBtn.classList.add('recording');
+    micBtn.textContent = '⏹';
+    micBtn.title = 'Toca para detener';
+    finalTranscript = aiInput.value;
   };
+
   recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    document.getElementById('ai-input').value = transcript;
+    let interim = '';
+    for(let i = e.resultIndex; i < e.results.length; i++){
+      const t = e.results[i][0].transcript;
+      if(e.results[i].isFinal){
+        finalTranscript += t + ' ';
+      } else {
+        interim += t;
+      }
+    }
+    aiInput.value = finalTranscript + interim;
   };
+
   recognition.onend = () => {
     isRecording = false;
-    document.getElementById('mic-btn').classList.remove('recording');
-    document.getElementById('mic-btn').textContent = '🎤';
+    micBtn.classList.remove('recording');
+    micBtn.textContent = '🎤';
+    micBtn.title = 'Dictar por voz';
+    if(finalTranscript.trim()) aiInput.value = finalTranscript.trim();
   };
-  recognition.onerror = () => {
+
+  recognition.onerror = (e) => {
     isRecording = false;
-    document.getElementById('mic-btn').classList.remove('recording');
-    document.getElementById('mic-btn').textContent = '🎤';
+    micBtn.classList.remove('recording');
+    micBtn.textContent = '🎤';
+    if(e.error === 'not-allowed'){
+      alert('Permiso de micrófono denegado. Actívalo en Configuración del sitio.');
+    }
   };
-  recognition.start();
+
+  try {
+    recognition.start();
+  } catch(e) {
+    console.error('Speech recognition error:', e);
+  }
 });
 
 // Llamada a Claude API
