@@ -125,6 +125,22 @@ button{cursor:pointer;}button:hover{background:var(--s1);}
   input,select,button{font-size:16px;}
   #ue{max-width:100px;}
 }
+.dateicon{
+  width:22px;height:22px;padding:0;border:none;background:transparent;
+  -webkit-appearance:none;appearance:none;cursor:pointer;flex-shrink:0;
+}
+.dateicon::-webkit-datetime-edit,
+.dateicon::-webkit-datetime-edit-fields-wrapper,
+.dateicon::-webkit-datetime-edit-text,
+.dateicon::-webkit-datetime-edit-month-field,
+.dateicon::-webkit-datetime-edit-day-field,
+.dateicon::-webkit-datetime-edit-year-field,
+.dateicon::-webkit-inner-spin-button{
+  display:none;
+}
+.dateicon::-webkit-calendar-picker-indicator{
+  opacity:1;padding:0;margin:0;width:20px;height:20px;
+}
 </style>
 </head>
 <body>
@@ -362,9 +378,8 @@ function tCard(t){
         return `<div style="display:flex;align-items:center;gap:6px;">
         <button data-subdone="${t.id}|${s.id}" type="button" style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${s.done?'var(--accent)':'var(--border2)'};background:${s.done?'var(--accent)':'var(--s1)'};cursor:pointer;flex-shrink:0;padding:0;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center;">${s.done?'✓':''}</button>
         <span style="font-size:12px;flex:1;min-width:0;${s.done?'text-decoration:line-through;color:var(--tm);':'color:var(--t1);'}">${sal?'⚠ ':''}${s.name}</span>
-        <div style="position:relative;width:20px;height:20px;flex-shrink:0;" title="${s.due?fd(s.due):'Agregar fecha'}">
-          <input data-subdue="${t.id}|${s.id}" type="date" value="${s.due||''}" style="position:absolute;width:1px;height:1px;opacity:0;border:none;pointer-events:none;">
-          <button type="button" data-subdatebtn="${t.id}|${s.id}" style="all:unset;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;width:100%;height:100%;${s.due?'':'opacity:.4;'}">${sal?'⚠️':'📅'}</button>
+        <div style="width:22px;height:22px;flex-shrink:0;border-radius:6px;${sal?'background:var(--bgd);':''}" title="${s.due?fd(s.due):'Agregar fecha'}">
+          <input data-subdue="${t.id}|${s.id}" type="date" class="dateicon" value="${s.due||''}">
         </div>
         <button data-subdel="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✕</button>
       </div>`;
@@ -635,13 +650,6 @@ document.getElementById('matrix').addEventListener('click',e=>{
   const dl=e.target.closest('[data-del]'); if(dl){doDelete(dl.getAttribute('data-del'));return;}
   const sd=e.target.closest('[data-subdone]'); if(sd){const[tid,sid]=sd.getAttribute('data-subdone').split('|');doToggleSubtask(tid,sid);return;}
   const sdl=e.target.closest('[data-subdel]'); if(sdl){const[tid,sid]=sdl.getAttribute('data-subdel').split('|');doDeleteSubtask(tid,sid);return;}
-  const sdb=e.target.closest('[data-subdatebtn]');
-  if(sdb){
-    const key=sdb.getAttribute('data-subdatebtn');
-    const input=document.querySelector(`input[data-subdue="${key.replace(/"/g,'\\"')}"]`);
-    if(input){ if(input.showPicker){ try{ input.showPicker(); }catch(err){ input.click(); } } else { input.click(); } }
-    return;
-  }
   const rmr=e.target.closest('[data-rmr]'); if(rmr){doRemRec(rmr.getAttribute('data-rmr'));return;}
   const er=e.target.closest('[data-editrec]'); if(er){doEditRec(er.getAttribute('data-editrec'));return;}
   const ed=e.target.closest('[data-edit]'); if(ed){doEdit(ed.getAttribute('data-edit'));}
