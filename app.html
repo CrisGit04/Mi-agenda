@@ -357,11 +357,15 @@ function tCard(t){
       ${subs.length?`<span style="font-size:11px;color:var(--tm);">☑ ${subDone}/${subs.length} subtareas</span>`:''}
     </div>
     ${subs.length?`<div style="border-top:.5px solid var(--border);margin-top:2px;padding-top:6px;display:flex;flex-direction:column;gap:5px;">
-      ${subs.map(s=>`<div style="display:flex;align-items:center;gap:8px;">
+      ${subs.map(s=>{
+        const sh=hu(s.due), sal=sh!==null&&sh<=48&&!s.done;
+        return `<div style="display:flex;align-items:center;gap:6px;">
         <button data-subdone="${t.id}|${s.id}" type="button" style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${s.done?'var(--accent)':'var(--border2)'};background:${s.done?'var(--accent)':'var(--s1)'};cursor:pointer;flex-shrink:0;padding:0;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center;">${s.done?'✓':''}</button>
-        <span style="font-size:12px;flex:1;${s.done?'text-decoration:line-through;color:var(--tm);':'color:var(--t1);'}">${s.name}</span>
+        <span style="font-size:12px;flex:1;min-width:0;${s.done?'text-decoration:line-through;color:var(--tm);':'color:var(--t1);'}">${sal?'⚠ ':''}${s.name}</span>
+        <input data-subdue="${t.id}|${s.id}" type="date" value="${s.due||''}" style="width:108px;font-size:11px;height:24px;padding:0 4px;flex-shrink:0;${sal?'color:var(--danger);':''}">
         <button data-subdel="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✕</button>
-      </div>`).join('')}
+      </div>`;
+      }).join('')}
     </div>`:''}
     <input data-subinput="${t.id}" type="text" placeholder="+ agregar subtarea (Enter)" style="font-size:12px;height:26px;padding:0 8px;margin-top:2px;">
   </div>`;
@@ -475,6 +479,12 @@ function doToggleSubtask(taskId,subId){
 function doDeleteSubtask(taskId,subId){
   const t=tasks.find(x=>x.id===taskId); if(!t||!t.subtasks)return;
   t.subtasks=t.subtasks.filter(x=>x.id!==subId);
+  render(); persist();
+}
+function doSetSubDue(taskId,subId,due){
+  const t=tasks.find(x=>x.id===taskId); if(!t||!t.subtasks)return;
+  const s=t.subtasks.find(x=>x.id===subId); if(!s)return;
+  s.due=due||'';
   render(); persist();
 }
 function doRestore(id){
@@ -632,6 +642,10 @@ document.getElementById('matrix').addEventListener('keydown',e=>{
     e.preventDefault();
     doAddSubtask(inp.getAttribute('data-subinput'),inp.value);
   }
+});
+document.getElementById('matrix').addEventListener('change',e=>{
+  const sdd=e.target.closest('[data-subdue]');
+  if(sdd){const[tid,sid]=sdd.getAttribute('data-subdue').split('|');doSetSubDue(tid,sid,sdd.value);}
 });
 document.getElementById('history').addEventListener('click',e=>{
   const rb=e.target.closest('[data-rst]'); if(rb)doRestore(rb.getAttribute('data-rst'));
