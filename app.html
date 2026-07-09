@@ -223,6 +223,18 @@ button{cursor:pointer;}button:hover{background:var(--s1);}
   </div>
 
   <div class="summary" id="summary"></div>
+
+  <div class="card" id="weekly-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <div>
+        <p class="stitle" style="margin:0 0 2px;">📊 Análisis semanal inteligente</p>
+        <p style="font-size:12px;color:var(--tm);margin:0;">Un resumen accionable de tu semana anterior, generado por IA</p>
+      </div>
+      <button id="weekly-btn" type="button" style="white-space:nowrap;">Ver análisis</button>
+    </div>
+    <div id="weekly-content" style="display:none;margin-top:10px;padding-top:10px;border-top:.5px solid var(--border);font-size:14px;line-height:1.5;color:var(--t1);"></div>
+  </div>
+
   <p class="stitle">▦ Matriz de prioridad</p>
   <div class="matrix" id="matrix"></div>
   <p class="stitle">📅 Carga semanal</p>
@@ -270,7 +282,7 @@ const QM = {
   q4:{ title:'Posponer', sub:'No urgente + no importante', bg:'var(--s1)' }
 };
 
-let tasks=[], history=[], recurring=[];
+let tasks=[], history=[], recurring=[], weeklyStats=[];
 let idc=1, ridc=1, selDays=[], editId=null;
 let loaded=false, isRemote=false, isPro=false, lastReset='';
 let curRef=null, curLis=null;
@@ -284,7 +296,28 @@ function wk(){
   const y=m.getFullYear(), s=new Date(y,0,1);
   return `${y}-W${Math.ceil(((m-s)/86400000+s.getDay()+1)/7)}`;
 }
-function persist(){ if(isRemote||!curRef)return; set(curRef,{tasks,history,recurring,idc,ridc,lastReset,isPro}); }
+function persist(){ if(isRemote||!curRef)return; set(curRef,{tasks,history,recurring,idc,ridc,lastReset,isPro,weeklyStats}); }
+
+// Captura estadísticas de la semana que termina, justo antes del reset semanal.
+// Se guarda solo la data cruda (sin costo de IA); el texto del análisis se genera
+// bajo demanda cuando el usuario toca "Ver análisis semanal".
+function captureWeeklyStats(){
+  if(!lastReset) return; // primera vez que se usa la app, no hay semana previa que cerrar
+  if(weeklyStats.some(w=>w.week===lastReset)) return; // ya capturada
+  const completedLastWeek = history.filter(t=>t.cw===lastReset);
+  const pendingCarryover = tasks.filter(t=>!t.completed);
+  const all = [...completedLastWeek, ...pendingCarryover];
+  const byQ = {q1:0,q2:0,q3:0,q4:0};
+  all.forEach(t=>{ byQ[Q(t)]++; });
+  weeklyStats.push({
+    week: lastReset,
+    total: all.length,
+    completed: completedLastWeek.length,
+    q1: byQ.q1, q2: byQ.q2, q3: byQ.q3, q4: byQ.q4,
+    insight: null
+  });
+  if(weeklyStats.length > 8) weeklyStats = weeklyStats.slice(-8); // conserva máx. 8 semanas
+}
 
 function ensureRec(){
   const cw=wk();
@@ -297,6 +330,7 @@ function ensureRec(){
 }
 function weekReset(){
   const cw=wk(); if(lastReset===cw)return;
+  captureWeeklyStats();
   tasks=tasks.filter(t=>!t.rid); lastReset=cw; ensureRec();
 }
 
@@ -609,7 +643,7 @@ onAuthStateChanged(auth,user=>{
     document.getElementById('ue').textContent=user.email;
     if(curRef&&curLis)off(curRef,'value',curLis);
     curRef=ref(db,`users/${user.uid}/agenda`);
-    loaded=false; tasks=[]; history=[]; recurring=[]; idc=1; ridc=1; lastReset=''; isPro=false;
+    loaded=false; tasks=[]; history=[]; recurring=[]; weeklyStats=[]; idc=1; ridc=1; lastReset=''; isPro=false;
     curLis=onValue(curRef,snap=>{
       const data=snap.val();
       isRemote=true;
@@ -623,6 +657,7 @@ onAuthStateChanged(auth,user=>{
         ridc=data.ridc||data.recurIdCounter||1;
         lastReset=data.lastReset||'';
         isPro=data.isPro||false;
+        weeklyStats=data.weeklyStats||[];
       }
       // Deduplicate: remove old-style instances if new-style already exist for same rid+day
 const seen = new Set();
@@ -772,6 +807,51 @@ micBtn.addEventListener('click', () => {
     stopRecording();
   }else{
     startRecording();
+  }
+});
+
+// Análisis semanal inteligente — bajo demanda (no automático)
+document.getElementById('weekly-btn').addEventListener('click', async () => {
+  const contentEl = document.getElementById('weekly-content');
+  const btn = document.getElementById('weekly-btn');
+
+  if(!weeklyStats.length){
+    contentEl.style.display = 'block';
+    contentEl.textContent = 'Aún no hay datos de una semana completa. Vuelve el próximo lunes.';
+    return;
+  }
+
+  const latest = weeklyStats[weeklyStats.length - 1];
+  contentEl.style.display = 'block';
+
+  if(latest.insight){
+    contentEl.textContent = latest.insight;
+    return;
+  }
+
+  contentEl.textContent = 'Generando análisis...';
+  btn.disabled = true;
+
+  const previous = weeklyStats.length > 1 ? weeklyStats[weeklyStats.length - 2] : null;
+
+  try{
+    const res = await fetch('https://planwik-ai.cristobal-alarcon4.workers.dev/weekly-insight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ current: latest, previous })
+    });
+    if(!res.ok) throw new Error('Worker error: ' + res.status);
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+
+    latest.insight = (data.insight || '').trim() || 'No se pudo generar el análisis esta vez.';
+    contentEl.textContent = latest.insight;
+    persist();
+  }catch(e){
+    console.error(e);
+    contentEl.textContent = 'No se pudo generar el análisis. Intenta de nuevo más tarde.';
+  }finally{
+    btn.disabled = false;
   }
 });
 
