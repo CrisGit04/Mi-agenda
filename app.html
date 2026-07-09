@@ -184,6 +184,10 @@ button{cursor:pointer;}button:hover{background:var(--s1);}
         <div class="preview-row"><span class="preview-label">Categoría</span><span class="preview-val" id="pv-cat"></span></div>
         <div class="preview-row"><span class="preview-label">Prioridad</span><span class="preview-val" id="pv-prio"></span></div>
         <div class="preview-row"><span class="preview-label">Fecha</span><span class="preview-val" id="pv-date"></span></div>
+        <div id="pv-subs-row" style="display:none;flex-direction:column;gap:4px;padding:8px 0 0;">
+          <span class="preview-label">Subtareas sugeridas</span>
+          <div id="pv-subs" style="font-size:12px;color:var(--t2);display:flex;flex-direction:column;gap:3px;"></div>
+        </div>
         <button id="ai-confirm" type="button">+ Agregar esta tarea</button>
       </div>
     </div>
@@ -336,6 +340,8 @@ function weekReset(){
 
 function tCard(t){
   const h=hu(t.due), al=h!==null&&h<=48;
+  const subs=t.subtasks||[];
+  const subDone=subs.filter(s=>s.done).length;
   return `<div style="background:var(--s2);border:.5px solid ${al?'var(--bord)':'var(--border)'};border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:4px;margin-bottom:6px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
       <p style="font-size:13px;font-weight:500;margin:0;flex:1;min-width:0;color:var(--t1);">${t.name}</p>
@@ -348,7 +354,16 @@ function tCard(t){
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
       <span class="${CATC[t.cat]}" style="font-size:11px;padding:2px 8px;border-radius:var(--r);font-weight:500;">${CAT[t.cat]}</span>
       ${t.due?`<span style="font-size:11px;${al?'color:var(--danger);font-weight:500;':'color:var(--tm);'}">${al?'⚠ ':''}${fd(t.due)}</span>`:''}
+      ${subs.length?`<span style="font-size:11px;color:var(--tm);">☑ ${subDone}/${subs.length} subtareas</span>`:''}
     </div>
+    ${subs.length?`<div style="border-top:.5px solid var(--border);margin-top:2px;padding-top:6px;display:flex;flex-direction:column;gap:5px;">
+      ${subs.map(s=>`<div style="display:flex;align-items:center;gap:8px;">
+        <button data-subdone="${t.id}|${s.id}" type="button" style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${s.done?'var(--accent)':'var(--border2)'};background:${s.done?'var(--accent)':'var(--s1)'};cursor:pointer;flex-shrink:0;padding:0;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center;">${s.done?'✓':''}</button>
+        <span style="font-size:12px;flex:1;${s.done?'text-decoration:line-through;color:var(--tm);':'color:var(--t1);'}">${s.name}</span>
+        <button data-subdel="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✕</button>
+      </div>`).join('')}
+    </div>`:''}
+    <input data-subinput="${t.id}" type="text" placeholder="+ agregar subtarea (Enter)" style="font-size:12px;height:26px;padding:0 8px;margin-top:2px;">
   </div>`;
 }
 
@@ -438,6 +453,29 @@ function doDelete(id){
   const t=tasks.find(x=>x.id===id); if(!t)return;
   if(!window.confirm(`¿Eliminar "${t.name}"?`))return;
   tasks=tasks.filter(x=>x.id!==id); render(); persist();
+}
+function doAddSubtask(taskId,name){
+  const t=tasks.find(x=>x.id===taskId); if(!t||!name.trim())return;
+  if(!t.subtasks)t.subtasks=[];
+  t.subtasks.push({id:'s'+Date.now()+Math.floor(Math.random()*1000),name:name.trim(),done:false});
+  render(); persist();
+}
+function doToggleSubtask(taskId,subId){
+  const t=tasks.find(x=>x.id===taskId); if(!t||!t.subtasks)return;
+  const s=t.subtasks.find(x=>x.id===subId); if(!s)return;
+  s.done=!s.done;
+  // Auto-completar la tarea padre cuando todas las subtareas están hechas
+  if(t.subtasks.length&&t.subtasks.every(x=>x.done)&&!t.completed){
+    render(); persist();
+    doComplete(taskId);
+    return;
+  }
+  render(); persist();
+}
+function doDeleteSubtask(taskId,subId){
+  const t=tasks.find(x=>x.id===taskId); if(!t||!t.subtasks)return;
+  t.subtasks=t.subtasks.filter(x=>x.id!==subId);
+  render(); persist();
 }
 function doRestore(id){
   const i=history.findIndex(x=>x.id===id); if(i===-1)return;
@@ -582,9 +620,18 @@ document.getElementById('hclear').addEventListener('click',()=>{history=[];rende
 document.getElementById('matrix').addEventListener('click',e=>{
   const dn=e.target.closest('[data-done]'); if(dn){doComplete(dn.getAttribute('data-done'));return;}
   const dl=e.target.closest('[data-del]'); if(dl){doDelete(dl.getAttribute('data-del'));return;}
+  const sd=e.target.closest('[data-subdone]'); if(sd){const[tid,sid]=sd.getAttribute('data-subdone').split('|');doToggleSubtask(tid,sid);return;}
+  const sdl=e.target.closest('[data-subdel]'); if(sdl){const[tid,sid]=sdl.getAttribute('data-subdel').split('|');doDeleteSubtask(tid,sid);return;}
   const rmr=e.target.closest('[data-rmr]'); if(rmr){doRemRec(rmr.getAttribute('data-rmr'));return;}
   const er=e.target.closest('[data-editrec]'); if(er){doEditRec(er.getAttribute('data-editrec'));return;}
   const ed=e.target.closest('[data-edit]'); if(ed){doEdit(ed.getAttribute('data-edit'));}
+});
+document.getElementById('matrix').addEventListener('keydown',e=>{
+  const inp=e.target.closest('[data-subinput]');
+  if(inp&&e.key==='Enter'){
+    e.preventDefault();
+    doAddSubtask(inp.getAttribute('data-subinput'),inp.value);
+  }
 });
 document.getElementById('history').addEventListener('click',e=>{
   const rb=e.target.closest('[data-rst]'); if(rb)doRestore(rb.getAttribute('data-rst'));
@@ -878,7 +925,8 @@ Responde SOLO con un JSON válido con esta estructura exacta:
   "urgent": true | false,
   "important": true | false,
   "dueDate": "YYYY-MM-DD" | null,
-  "reasoning": "explicación breve de por qué clasificaste así (1 línea)"
+  "reasoning": "explicación breve de por qué clasificaste así (1 línea)",
+  "subtasks": ["paso 1", "paso 2", "..."]
 }
 
 Reglas:
@@ -886,7 +934,8 @@ Reglas:
 - important = true si tiene impacto en objetivos, clientes, negocio o metas
 - category trabajo si es laboral, personal si es vida personal, proyecto si es un proyecto especial
 - dueDate solo si hay fecha explícita o relativa (mañana, viernes, etc)
-- Si menciona "viernes" y hoy es ${new Date().toLocaleDateString('es-CL', {weekday:'long'})}, calcula la fecha correcta`;
+- Si menciona "viernes" y hoy es ${new Date().toLocaleDateString('es-CL', {weekday:'long'})}, calcula la fecha correcta
+- subtasks: SOLO si la tarea describe varios pasos o componentes distintos (ej. "preparar presentación, coordinar con equipo y enviar informe"). Genera entre 2 y 5 subtareas cortas y accionables. Si la tarea es simple y de un solo paso, devuelve un array vacío []`;
 
   try {
     const res = await fetch('https://planwik-ai.cristobal-alarcon4.workers.dev', {
@@ -923,6 +972,16 @@ Reglas:
     document.getElementById('pv-cat').textContent = catLabels[parsed.category] || parsed.category;
     document.getElementById('pv-prio').textContent = qLabels[qKey] || qKey;
     document.getElementById('pv-date').textContent = parsed.dueDate || 'Sin fecha';
+
+    const subsRow = document.getElementById('pv-subs-row');
+    const subsList = parsed.subtasks || [];
+    if(subsList.length){
+      document.getElementById('pv-subs').innerHTML = subsList.map(s=>`• ${s}`).join('<br>');
+      subsRow.style.display = 'flex';
+    } else {
+      subsRow.style.display = 'none';
+    }
+
     document.getElementById('ai-preview').classList.add('show');
 
   } catch(e) {
@@ -943,6 +1002,11 @@ document.getElementById('ai-confirm').addEventListener('click', () => {
     return;
   }
   const taskName = aiPreview.name;
+  const subtasks = (aiPreview.subtasks || []).map(name => ({
+    id: 's'+Date.now()+Math.floor(Math.random()*1000),
+    name,
+    done: false
+  }));
   const newTask = {
     id: 't'+(idc++),
     name: aiPreview.name,
@@ -951,7 +1015,8 @@ document.getElementById('ai-confirm').addEventListener('click', () => {
     important: Boolean(aiPreview.important),
     day: '',
     due: aiPreview.dueDate || '',
-    completed: false
+    completed: false,
+    subtasks
   };
   console.log('Adding AI task:', newTask);
   tasks.push(newTask);
