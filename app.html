@@ -675,7 +675,6 @@ document.getElementById('imodal').addEventListener('click',e=>{if(e.target===doc
 // ── AI TASK CAPTURE ───────────────────────────────────────
 let aiPreview = null;
 let isRecording = false;
-let recognition = null;
 
 document.getElementById('ai-toggle').addEventListener('click', () => {
   const panel = document.getElementById('ai-panel');
@@ -691,68 +690,88 @@ document.getElementById('ai-cancel').addEventListener('click', () => {
   aiPreview = null;
 });
 
-// Voz — solución robusta para Safari iOS
+// Voz — MediaRecorder + Whisper (funciona en Safari iOS, a diferencia de webkitSpeechRecognition)
 const micBtn = document.getElementById('mic-btn');
 const aiInput = document.getElementById('ai-input');
+let mediaRecorder = null;
+let audioChunks = [];
+let mediaStream = null;
 
-micBtn.addEventListener('click', () => {
-  if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)){
-    alert('Dictado no disponible en este navegador.');
+function pickMimeType(){
+  const candidates = ['audio/mp4', 'audio/webm', 'audio/webm;codecs=opus'];
+  for(const c of candidates){
+    if(window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)) return c;
+  }
+  return ''; // deja que el navegador elija el default
+}
+
+async function startRecording(){
+  try{
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  }catch(e){
+    alert('Permiso de micrófono denegado. Ve a Ajustes > Safari > Micrófono y actívalo.');
     return;
   }
 
-  // Si ya está grabando, detener
-  if(isRecording){
-    isRecording = false;
-    micBtn.classList.remove('recording');
-    micBtn.textContent = '🎤';
-    if(recognition){ try{ recognition.abort(); }catch(e){} recognition = null; }
-    return;
-  }
+  const mimeType = pickMimeType();
+  mediaRecorder = mimeType ? new MediaRecorder(mediaStream, { mimeType }) : new MediaRecorder(mediaStream);
+  audioChunks = [];
 
-  // Iniciar nueva sesión
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  recognition = new SR();
-  recognition.lang = 'es-CL';
-  recognition.continuous = false;
-  recognition.interimResults = false;
+  mediaRecorder.ondataavailable = (e) => { if(e.data.size > 0) audioChunks.push(e.data); };
 
+  mediaRecorder.onstop = async () => {
+    mediaStream.getTracks().forEach(t => t.stop());
+    micBtn.textContent = '⏳';
+    micBtn.disabled = true;
+
+    try{
+      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      const formData = new FormData();
+      const ext = (mediaRecorder.mimeType || '').includes('mp4') ? 'audio.mp4' : 'audio.webm';
+      formData.append('audio', blob, ext);
+
+      const res = await fetch('https://planwik-ai.cristobal-alarcon4.workers.dev/transcribe', {
+        method: 'POST',
+        body: formData
+      });
+      if(!res.ok) throw new Error('Worker error: ' + res.status);
+      const data = await res.json();
+      if(data.error) throw new Error(data.error);
+
+      const t = (data.text || '').trim();
+      if(t) aiInput.value = aiInput.value ? aiInput.value + ' ' + t : t;
+    }catch(err){
+      console.error(err);
+      alert('No se pudo transcribir el audio. Intenta de nuevo o escribe la tarea manualmente.');
+    }finally{
+      micBtn.disabled = false;
+      micBtn.classList.remove('recording');
+      micBtn.textContent = '🎤';
+      isRecording = false;
+    }
+  };
+
+  mediaRecorder.start();
   isRecording = true;
   micBtn.classList.add('recording');
   micBtn.textContent = '⏹ Toca para parar';
+}
 
-  recognition.onresult = (e) => {
-    if(e.results && e.results.length > 0){
-      const t = e.results[e.results.length - 1][0].transcript;
-      aiInput.value = aiInput.value ? aiInput.value + ' ' + t : t;
-    }
-  };
+function stopRecording(){
+  if(mediaRecorder && mediaRecorder.state !== 'inactive'){
+    mediaRecorder.stop();
+  }
+}
 
-  recognition.onerror = (e) => {
-    isRecording = false;
-    micBtn.classList.remove('recording');
-    micBtn.textContent = '🎤';
-    recognition = null;
-    if(e.error === 'not-allowed'){
-      alert('Permiso de micrófono denegado. Ve a Ajustes > Safari > Micrófono y actívalo.');
-    }
-  };
-
-  recognition.onend = () => {
-    isRecording = false;
-    micBtn.classList.remove('recording');
-    micBtn.textContent = '🎤';
-    recognition = null;
-  };
-
-  try {
-    recognition.start();
-  } catch(e) {
-    isRecording = false;
-    micBtn.classList.remove('recording');
-    micBtn.textContent = '🎤';
-    recognition = null;
-    alert('Error al iniciar el micrófono: ' + e.message);
+micBtn.addEventListener('click', () => {
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){
+    alert('Grabación de audio no disponible en este navegador.');
+    return;
+  }
+  if(isRecording){
+    stopRecording();
+  }else{
+    startRecording();
   }
 });
 
