@@ -151,6 +151,70 @@
   .chip-pink { background: #db2777; }
   .chip-amber { background: #d97706; }
 
+  /* DEMO ANIMADO */
+  .demo-input-row {
+    display: flex; align-items: center; gap: 8px;
+    background: #f5f7ff; border: 0.5px solid var(--accent-light);
+    border-radius: 8px; padding: 9px 12px; margin-bottom: 12px;
+    min-height: 20px;
+  }
+  .demo-input-icon { font-size: 13px; flex-shrink: 0; }
+  .demo-input-text {
+    font-size: 13px; color: var(--ink); font-weight: 500;
+    white-space: nowrap; overflow: hidden;
+  }
+  .demo-cursor {
+    display: inline-block; width: 2px; height: 14px;
+    background: var(--accent); vertical-align: middle;
+    animation: demoBlink 1s step-end infinite;
+  }
+  .demo-thinking {
+    display: none; align-items: center; gap: 2px;
+    font-size: 11px; color: var(--ink-3); margin-left: 4px;
+  }
+  .demo-thinking.show { display: inline-flex; }
+  .demo-thinking .dot { animation: demoDot 1.2s infinite; opacity: .2; }
+  .demo-thinking .dot:nth-child(2) { animation-delay: .2s; }
+  .demo-thinking .dot:nth-child(3) { animation-delay: .4s; }
+  .demo-mic {
+    margin-left: auto; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent-light); color: var(--accent);
+    font-size: 11px; display: flex; align-items: center; justify-content: center;
+    position: relative; flex-shrink: 0;
+  }
+  .demo-mic.pulse::after {
+    content: ''; position: absolute; inset: -4px; border-radius: 50%;
+    border: 1.5px solid var(--accent); opacity: 0;
+    animation: demoMicRing 1.3s cubic-bezier(.4,0,.2,1);
+  }
+  .task-chip.demo-added {
+    opacity: 0; transform: translateY(6px);
+    transition: opacity .45s cubic-bezier(.4,0,.2,1), transform .45s cubic-bezier(.4,0,.2,1);
+  }
+  .task-chip.demo-added.in { opacity: 1; transform: translateY(0); }
+  .demo-coach {
+    display: flex; align-items: flex-start; gap: 8px;
+    max-height: 0; opacity: 0; overflow: hidden; margin-top: 0;
+    background: var(--accent-light); border-radius: 8px; padding: 0 12px;
+    transition: max-height .5s cubic-bezier(.4,0,.2,1), opacity .4s ease, margin-top .4s ease, padding .4s ease;
+  }
+  .demo-coach.show { max-height: 70px; opacity: 1; margin-top: 12px; padding: 10px 12px; }
+  .demo-coach-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+  .demo-coach-text { font-size: 12px; color: var(--ink-2); line-height: 1.5; }
+
+  @keyframes demoBlink { 50% { opacity: 0; } }
+  @keyframes demoDot { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+  @keyframes demoMicRing {
+    0% { transform: scale(.6); opacity: .6; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .demo-cursor, .demo-thinking .dot { animation: none; }
+    .demo-mic.pulse::after { animation: none; }
+    .task-chip.demo-added { transition: none; }
+    .demo-coach { transition: none; }
+  }
+
   /* PROBLEM */
   .problem {
     background: var(--ink);
@@ -380,8 +444,14 @@
       <span class="dot dot-g"></span>
       <span class="preview-url">planwik.app</span>
     </div>
+    <div class="demo-input-row">
+      <span class="demo-input-icon">✨</span>
+      <span class="demo-input-text" id="demoTypeText"></span><span class="demo-cursor"></span>
+      <span class="demo-thinking" id="demoThinking">Clasificando<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></span>
+      <span class="demo-mic" id="demoMic" title="También puedes dictarla por voz">🎙️</span>
+    </div>
     <div class="matrix-grid">
-      <div class="quad quad-q1">
+      <div class="quad quad-q1" id="demoQ1">
         <div class="quad-title">Hacer ahora</div>
         <div class="quad-sub">Urgente + importante</div>
         <div class="task-chip"><span class="chip-dot chip-blue"></span>Reunión con cliente clave</div>
@@ -403,6 +473,10 @@
         <div class="quad-sub">No urgente + no importante</div>
         <div class="task-chip"><span class="chip-dot chip-pink"></span>Reorganizar carpetas</div>
       </div>
+    </div>
+    <div class="demo-coach" id="demoCoach">
+      <span class="demo-coach-icon">📊</span>
+      <span class="demo-coach-text">Q1 subió 40% esta semana — bloquea tiempo para tus Q2 antes del miércoles.</span>
     </div>
   </div>
 </div>
@@ -653,5 +727,79 @@
 
   closeBtn.addEventListener('click', () => modal.classList.remove('open'));
   modal.addEventListener('click', e => { if(e.target === modal) modal.classList.remove('open'); });
+})();
+
+// Secuencia animada del mockup: escribe → clasifica con IA → sugiere voz → tip del coach semanal
+(function(){
+  const typeEl = document.getElementById('demoTypeText');
+  const thinkEl = document.getElementById('demoThinking');
+  const micEl = document.getElementById('demoMic');
+  const coachEl = document.getElementById('demoCoach');
+  const q1El = document.getElementById('demoQ1');
+  if(!typeEl || !q1El) return;
+
+  const phrase = 'reunión con cliente mañana urgente';
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function addChip(){
+    const chip = document.createElement('div');
+    chip.className = 'task-chip demo-added';
+    chip.innerHTML = '<span class="chip-dot chip-blue"></span>Reunión con cliente mañana';
+    q1El.appendChild(chip);
+    return chip;
+  }
+
+  if(reduced){
+    typeEl.textContent = phrase;
+    const chip = addChip();
+    chip.classList.add('in');
+    coachEl.classList.add('show');
+    return;
+  }
+
+  let i = 0;
+  function typeStep(){
+    if(i <= phrase.length){
+      typeEl.textContent = phrase.slice(0, i);
+      i++;
+      setTimeout(typeStep, 45);
+    } else {
+      setTimeout(classify, 500);
+    }
+  }
+
+  function classify(){
+    thinkEl.classList.add('show');
+    setTimeout(() => {
+      thinkEl.classList.remove('show');
+      typeEl.textContent = '';
+      const chip = addChip();
+      requestAnimationFrame(() => requestAnimationFrame(() => chip.classList.add('in')));
+      setTimeout(pulseMic, 900);
+    }, 900);
+  }
+
+  function pulseMic(){
+    micEl.classList.add('pulse');
+    setTimeout(() => { micEl.classList.remove('pulse'); showCoach(); }, 1300);
+  }
+
+  function showCoach(){
+    coachEl.classList.add('show');
+    setTimeout(resetLoop, 3400);
+  }
+
+  function resetLoop(){
+    coachEl.classList.remove('show');
+    const added = q1El.querySelector('.demo-added');
+    if(added){
+      added.classList.remove('in');
+      setTimeout(() => added.remove(), 450);
+    }
+    i = 0;
+    setTimeout(typeStep, 900);
+  }
+
+  setTimeout(typeStep, 1200);
 })();
 </script>
