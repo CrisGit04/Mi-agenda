@@ -664,7 +664,7 @@ document.getElementById('addbtn').addEventListener('click',()=>{
     if(!isPro&&pend.length>=FREE){
       const b=document.getElementById('banner');
       b.style.borderColor='var(--bord)'; b.style.background='var(--bgd)';
-      b.innerHTML=`<span style="font-size:13px;color:var(--danger);flex:1;">Límite de ${FREE} tareas alcanzado.</span><a href="${FLOW}" target="_blank" style="font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;">⬆ Upgrade a Pro</a>`;
+      b.innerHTML=`<span style="font-size:13px;color:var(--danger);flex:1;">Tu semana ya no cabe en el plan gratis.</span><a href="${FLOW}" target="_blank" style="font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;">⬆ Desbloquea espacio ilimitado</a>`;
       setTimeout(()=>render(),3000); return;
     }
     tasks.push({id:'t'+(idc++),name,cat,urgent,important,day:'',due,completed:false});
@@ -1135,7 +1135,7 @@ document.getElementById('ai-confirm').addEventListener('click', () => {
   if(!aiPreview) return;
   const pend = tasks.filter(t=>!t.completed);
   if(!isPro && pend.length >= FREE) {
-    alert(`Límite de ${FREE} tareas alcanzado. Haz upgrade a Pro.`);
+    alert(`Tu semana ya no cabe en el plan gratis (${FREE} tareas). Desbloquea espacio ilimitado con Pro.`);
     return;
   }
   const taskName = aiPreview.name;
