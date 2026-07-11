@@ -342,8 +342,9 @@ function tCard(t){
   const h=hu(t.due), al=h!==null&&h<=24;
   const subs=t.subtasks||[];
   const subDone=subs.filter(s=>s.done).length;
-  return `<div style="background:var(--s2);border:.5px solid ${al?'var(--bord)':'var(--border)'};border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:4px;margin-bottom:6px;">
+  return `<div data-taskrow="${t.id}" style="background:var(--s2);border:.5px solid ${al?'var(--bord)':'var(--border)'};border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:4px;margin-bottom:6px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+      <span data-draghandle="task:${t.id}" style="cursor:grab;touch-action:none;user-select:none;color:var(--tm);font-size:14px;padding:0 2px;flex-shrink:0;">⠿</span>
       <p style="font-size:13px;font-weight:500;margin:0;flex:1;min-width:0;color:var(--t1);">${t.name}</p>
       <div style="display:flex;gap:4px;flex-shrink:0;">
         <button class="ib" data-edit="${t.id}" type="button">✎</button>
@@ -359,7 +360,8 @@ function tCard(t){
     ${subs.length?`<div style="border-top:.5px solid var(--border);margin-top:2px;padding-top:6px;display:flex;flex-direction:column;gap:5px;">
       ${subs.map(s=>{
         const sh=hu(s.due), sal=sh!==null&&sh<=24&&!s.done;
-        return `<div style="display:flex;align-items:center;gap:6px;">
+        return `<div data-subrow="${t.id}|${s.id}" style="display:flex;align-items:center;gap:6px;">
+        <span data-draghandle="sub:${t.id}:${s.id}" style="cursor:grab;touch-action:none;user-select:none;color:var(--tm);font-size:12px;padding:0 1px;flex-shrink:0;">⠿</span>
         <button data-subdone="${t.id}|${s.id}" type="button" style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${s.done?'var(--accent)':'var(--border2)'};background:${s.done?'var(--accent)':'var(--s1)'};cursor:pointer;flex-shrink:0;padding:0;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center;">${s.done?'✓':''}</button>
         <span style="font-size:12px;flex:1;min-width:0;${s.done?'text-decoration:line-through;color:var(--tm);':'color:var(--t1);'}">${sal?'⚠ ':''}${s.name}</span>
         <div style="position:relative;width:${s.due?92:24}px;height:22px;flex-shrink:0;">
@@ -386,7 +388,10 @@ function rCard(r, insts){
         <button class="ib" data-rmr="${r.id}" type="button" title="Eliminar recurrente">🗑</button>
       </div>
     </div>
-    <p style="font-size:11px;color:var(--tm);margin:0 0 8px;">Recurrente semanal</p>
+    <div style="display:flex;align-items:center;gap:6px;margin:0 0 8px;">
+      <span class="${CATC[r.cat]}" style="font-size:11px;padding:2px 8px;border-radius:var(--r);font-weight:500;">${CAT[r.cat]}</span>
+      <p style="font-size:11px;color:var(--tm);margin:0;">Recurrente semanal</p>
+    </div>
     <div style="border-top:.5px solid var(--border);padding-top:6px;">
       ${pend.map(t=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:.5px solid var(--border);">
         <button data-done="${t.id}" type="button" style="width:20px;height:20px;border-radius:4px;border:1.5px solid var(--border2);background:var(--s1);cursor:pointer;flex-shrink:0;padding:0;font-size:11px;color:transparent;display:flex;align-items:center;justify-content:center;">✓</button>
@@ -430,10 +435,14 @@ function render(){
   // matrix
   document.getElementById('matrix').innerHTML=['q1','q2','q3','q4'].map(qid=>{
     const m=QM[qid];
-    const list=pend.filter(t=>Q(t)===qid).sort((a,b)=>{
-      if(!a.due&&!b.due)return 0; if(!a.due)return 1; if(!b.due)return -1;
-      return new Date(a.due)-new Date(b.due);
-    });
+    const raw=pend.filter(t=>Q(t)===qid);
+    const manual=raw.some(t=>t.order!=null);
+    const list=manual
+      ? raw.slice().sort((a,b)=>(a.order??Infinity)-(b.order??Infinity))
+      : raw.slice().sort((a,b)=>{
+          if(!a.due&&!b.due)return 0; if(!a.due)return 1; if(!b.due)return -1;
+          return new Date(a.due)-new Date(b.due);
+        });
     return `<div class="quad" style="background:${m.bg};"><p class="qt">${m.title}</p><p class="qs">${m.sub}</p>${qList(list)}</div>`;
   }).join('');
   // week
@@ -489,6 +498,29 @@ function doSetSubDue(taskId,subId,due){
   const s=t.subtasks.find(x=>x.id===subId); if(!s)return;
   s.due=due||'';
   render(); persist();
+}
+
+// Reordenar tareas dentro de su mismo cuadrante (activa el modo "orden manual" para ese cuadrante)
+function reorderTask(draggedId,targetId,after){
+  const dragged=tasks.find(t=>t.id===draggedId); if(!dragged)return;
+  const qid=Q(dragged);
+  const siblings=tasks.filter(t=>!t.completed&&Q(t)===qid&&!t.rid)
+    .sort((a,b)=>(a.order??Infinity)-(b.order??Infinity));
+  const without=siblings.filter(t=>t.id!==draggedId);
+  let idx=without.findIndex(t=>t.id===targetId);
+  if(idx===-1)idx=without.length; else if(after)idx++;
+  without.splice(idx,0,dragged);
+  without.forEach((t,i)=>{t.order=i;});
+}
+
+// Reordenar subtareas dentro de la misma tarea
+function reorderSubtask(taskId,draggedSubId,targetSubId,after){
+  const t=tasks.find(x=>x.id===taskId); if(!t||!t.subtasks)return;
+  const idx=t.subtasks.findIndex(s=>s.id===draggedSubId); if(idx===-1)return;
+  const [item]=t.subtasks.splice(idx,1);
+  let toIdx=t.subtasks.findIndex(s=>s.id===targetSubId);
+  if(toIdx===-1)toIdx=t.subtasks.length; else if(after)toIdx++;
+  t.subtasks.splice(toIdx,0,item);
 }
 function doRestore(id){
   const i=history.findIndex(x=>x.id===id); if(i===-1)return;
@@ -649,6 +681,80 @@ document.getElementById('matrix').addEventListener('keydown',e=>{
 document.getElementById('matrix').addEventListener('change',e=>{
   const sdd=e.target.closest('[data-subdue]');
   if(sdd){const[tid,sid]=sdd.getAttribute('data-subdue').split('|');doSetSubDue(tid,sid,sdd.value);}
+});
+
+// Arrastrar y soltar para reordenar tareas/subtareas — usa Pointer Events (no HTML5 Drag&Drop,
+// que no funciona con touch en iOS Safari). El elemento arrastrado se mueve visualmente con
+// translateY; al soltar, se calcula su posición final comparándola con las posiciones ORIGINALES
+// de sus hermanos (más simple y confiable que reordenar el DOM en vivo durante el arrastre).
+document.getElementById('matrix').addEventListener('pointerdown',e=>{
+  const handle=e.target.closest('[data-draghandle]');
+  if(!handle)return;
+  e.preventDefault();
+  const key=handle.getAttribute('data-draghandle');
+  const parts=key.split(':');
+  const kind=parts[0];
+  let itemEl, itemSelector;
+  if(kind==='task'){ itemEl=handle.closest('[data-taskrow]'); itemSelector='[data-taskrow]'; }
+  else { itemEl=handle.closest('[data-subrow]'); itemSelector='[data-subrow]'; }
+  if(!itemEl)return;
+  const containerEl=itemEl.parentElement;
+  if(!containerEl)return;
+
+  const siblings=Array.from(containerEl.children).filter(el=>el.matches&&el.matches(itemSelector));
+  const startRects=siblings.map(el=>{const r=el.getBoundingClientRect();return{el,top:r.top,height:r.height};});
+  const startY=e.clientY;
+  const pointerId=e.pointerId;
+
+  try{handle.setPointerCapture(pointerId);}catch(err){}
+  itemEl.style.position='relative';
+  itemEl.style.zIndex='30';
+  itemEl.style.boxShadow='0 8px 20px rgba(0,0,0,.35)';
+  itemEl.style.transition='none';
+
+  function onMove(ev){
+    if(ev.pointerId!==pointerId)return;
+    const dy=ev.clientY-startY;
+    itemEl.style.transform=`translateY(${dy}px)`;
+  }
+  function onUp(ev){
+    if(ev.pointerId!==pointerId)return;
+    const dy=ev.clientY-startY;
+    itemEl.style.transform='';
+    itemEl.style.position='';
+    itemEl.style.zIndex='';
+    itemEl.style.boxShadow='';
+    try{handle.releasePointerCapture(pointerId);}catch(err){}
+    handle.removeEventListener('pointermove',onMove);
+    handle.removeEventListener('pointerup',onUp);
+    handle.removeEventListener('pointercancel',onUp);
+
+    const mine=startRects.find(r=>r.el===itemEl);
+    if(!mine){render();return;}
+    const myFinalCenter=mine.top+mine.height/2+dy;
+
+    let targetEl=null, after=false;
+    for(const r of startRects){
+      if(r.el===itemEl)continue;
+      const mid=r.top+r.height/2;
+      if(myFinalCenter<mid){targetEl=r.el;after=false;break;}
+      targetEl=r.el; after=true;
+    }
+
+    if(kind==='task'){
+      const draggedId=parts[1];
+      const targetId=targetEl?targetEl.getAttribute('data-taskrow'):null;
+      reorderTask(draggedId,targetId,after);
+    } else {
+      const taskId=parts[1], subId=parts[2];
+      const targetId=targetEl?targetEl.getAttribute('data-subrow').split('|')[1]:null;
+      reorderSubtask(taskId,subId,targetId,after);
+    }
+    render(); persist();
+  }
+  handle.addEventListener('pointermove',onMove);
+  handle.addEventListener('pointerup',onUp);
+  handle.addEventListener('pointercancel',onUp);
 });
 document.getElementById('history').addEventListener('click',e=>{
   const rb=e.target.closest('[data-rst]'); if(rb)doRestore(rb.getAttribute('data-rst'));
