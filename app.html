@@ -362,7 +362,10 @@ function tCard(t){
         return `<div style="display:flex;align-items:center;gap:6px;">
         <button data-subdone="${t.id}|${s.id}" type="button" style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${s.done?'var(--accent)':'var(--border2)'};background:${s.done?'var(--accent)':'var(--s1)'};cursor:pointer;flex-shrink:0;padding:0;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center;">${s.done?'✓':''}</button>
         <span style="font-size:12px;flex:1;min-width:0;${s.done?'text-decoration:line-through;color:var(--tm);':'color:var(--t1);'}">${sal?'⚠ ':''}${s.name}</span>
-        <input data-subdue="${t.id}|${s.id}" type="date" value="${s.due||''}" style="width:58px;flex-shrink:0;border:none;background:transparent;font-size:11px;padding:0;cursor:pointer;${sal?'color:var(--danger);font-weight:600;':'color:var(--tm);'}">
+        <div style="position:relative;width:${s.due?92:24}px;height:22px;flex-shrink:0;">
+          <input data-subdue="${t.id}|${s.id}" type="date" value="${s.due||''}" style="position:absolute;inset:0;width:100%;height:100%;border:none;background:transparent;font-size:11px;padding:0;cursor:pointer;${s.due?(sal?'color:var(--danger);font-weight:600;':'color:var(--tm);'):'color:transparent;'}">
+          ${!s.due?`<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:13px;opacity:.55;">📅</span>`:''}
+        </div>
         <button data-subdel="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✕</button>
       </div>`;
       }).join('')}
