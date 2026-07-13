@@ -290,7 +290,6 @@ async function upgradeToPro(btnEl){
       headers: { 'Authorization': `Bearer ${idToken}` }
     });
     const data = await res.json();
-    console.error('DEBUG upgradeToPro respuesta completa:', data);
     if(data.redirectUrl){
       window.location.href = data.redirectUrl;
     } else {
