@@ -278,6 +278,30 @@ const CAT = { trabajo:'Trabajo', personal:'Personal', proyecto:'Proyecto especia
 const CATC = { trabajo:'cat-trabajo', personal:'cat-personal', proyecto:'cat-proyecto' };
 const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const FLOW = 'https://www.flow.cl/uri/snMRF28h0';
+const CREATE_ORDER_URL = 'https://create-flow-order-958800466783.southamerica-west1.run.app';
+
+async function upgradeToPro(btnEl){
+  const originalText = btnEl ? btnEl.textContent : '';
+  if(btnEl){ btnEl.textContent = 'Redirigiendo a pago...'; btnEl.style.pointerEvents = 'none'; }
+  try{
+    const idToken = await auth.currentUser.getIdToken();
+    const res = await fetch(CREATE_ORDER_URL, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${idToken}` }
+    });
+    const data = await res.json();
+    if(data.redirectUrl){
+      window.location.href = data.redirectUrl;
+    } else {
+      throw new Error(data.error || 'No se pudo generar el link de pago');
+    }
+  }catch(err){
+    console.error(err);
+    alert('No se pudo iniciar el pago. Intenta de nuevo en unos segundos.');
+    if(btnEl){ btnEl.textContent = originalText; btnEl.style.pointerEvents = ''; }
+  }
+}
+window.upgradeToPro = upgradeToPro;
 const FREE = 10;
 const QM = {
   q1:{ title:'Hacer ahora', sub:'Urgente + importante', bg:'var(--bgd)' },
@@ -433,7 +457,7 @@ function render(){
     ban.innerHTML=`<span style="font-size:12px;color:var(--success);">✦ Planwik Pro activo — tareas ilimitadas</span>`;
   } else {
     const rem=Math.max(0,FREE-pend.length);
-    ban.innerHTML=`<span style="font-size:12px;color:var(--tm);">Plan gratuito: ${pend.length}/${FREE} tareas</span>${rem===0?`<a href="${FLOW}" target="_blank" style="font-size:12px;font-weight:600;color:var(--accent);text-decoration:none;margin-left:12px;">⬆ Upgrade a Pro — $3.990/mes</a>`:''}`;
+    ban.innerHTML=`<span style="font-size:12px;color:var(--tm);">Plan gratuito: ${pend.length}/${FREE} tareas</span>${rem===0?`<button onclick="upgradeToPro(this)" type="button" style="background:none;border:none;font-size:12px;font-weight:600;color:var(--accent);text-decoration:none;margin-left:12px;cursor:pointer;padding:0;">⬆ Upgrade a Pro — $3.990/mes</button>`:''}`;
   }
   // metrics
   const q1=pend.filter(t=>Q(t)==='q1');
@@ -664,7 +688,7 @@ document.getElementById('addbtn').addEventListener('click',()=>{
     if(!isPro&&pend.length>=FREE){
       const b=document.getElementById('banner');
       b.style.borderColor='var(--bord)'; b.style.background='var(--bgd)';
-      b.innerHTML=`<span style="font-size:13px;color:var(--danger);flex:1;">Tu semana ya no cabe en el plan gratis.</span><a href="${FLOW}" target="_blank" style="font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;">⬆ Desbloquea espacio ilimitado</a>`;
+      b.innerHTML=`<span style="font-size:13px;color:var(--danger);flex:1;">Tu semana ya no cabe en el plan gratis.</span><button onclick="upgradeToPro(this)" type="button" style="background:none;border:none;font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;cursor:pointer;padding:0;">⬆ Desbloquea espacio ilimitado</button>`;
       setTimeout(()=>render(),3000); return;
     }
     tasks.push({id:'t'+(idc++),name,cat,urgent,important,day:'',due,completed:false});
