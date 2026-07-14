@@ -334,14 +334,17 @@ function captureWeeklyStats(){
   if(weeklyStats.some(w=>w.week===lastReset)) return; // ya capturada
   const completedLastWeek = history.filter(t=>t.cw===lastReset);
   const pendingCarryover = tasks.filter(t=>!t.completed);
-  const all = [...completedLastWeek, ...pendingCarryover];
-  const byQ = {q1:0,q2:0,q3:0,q4:0};
-  all.forEach(t=>{ byQ[Q(t)]++; });
+  const byQ = {q1:{done:0,pend:0},q2:{done:0,pend:0},q3:{done:0,pend:0},q4:{done:0,pend:0}};
+  completedLastWeek.forEach(t=>{ byQ[Q(t)].done++; });
+  pendingCarryover.forEach(t=>{ byQ[Q(t)].pend++; });
   weeklyStats.push({
     week: lastReset,
-    total: all.length,
+    total: completedLastWeek.length + pendingCarryover.length,
     completed: completedLastWeek.length,
-    q1: byQ.q1, q2: byQ.q2, q3: byQ.q3, q4: byQ.q4,
+    q1done: byQ.q1.done, q1pend: byQ.q1.pend,
+    q2done: byQ.q2.done, q2pend: byQ.q2.pend,
+    q3done: byQ.q3.done, q3pend: byQ.q3.pend,
+    q4done: byQ.q4.done, q4pend: byQ.q4.pend,
     insight: null
   });
   if(weeklyStats.length > 8) weeklyStats = weeklyStats.slice(-8); // conserva máx. 8 semanas
@@ -1023,14 +1026,31 @@ document.getElementById('weekly-btn').addEventListener('click', async () => {
   const contentEl = document.getElementById('weekly-content');
   const btn = document.getElementById('weekly-btn');
 
+  // Toggle: si ya está abierto, solo lo cerramos
+  if(contentEl.style.display === 'block'){
+    contentEl.style.display = 'none';
+    btn.textContent = 'Ver análisis';
+    return;
+  }
+
   if(!weeklyStats.length){
     contentEl.style.display = 'block';
+    btn.textContent = 'Ocultar análisis';
     contentEl.textContent = 'Aún no hay datos de una semana completa. Vuelve el próximo lunes.';
     return;
   }
 
   const latest = weeklyStats[weeklyStats.length - 1];
+
+  // Si esta entrada viene del esquema viejo (contaba completadas+pendientes juntas),
+  // descartamos el insight ya generado con esos datos incorrectos para que se regenere bien.
+  if(latest.q1done === undefined && latest.insight){
+    latest.insight = null;
+    persist();
+  }
+
   contentEl.style.display = 'block';
+  btn.textContent = 'Ocultar análisis';
 
   if(latest.insight){
     contentEl.textContent = latest.insight;
