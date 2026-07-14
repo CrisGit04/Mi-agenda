@@ -332,15 +332,26 @@ function persist(){ if(isRemote||!curRef)return; set(curRef,{tasks,history,recur
 function captureWeeklyStats(){
   if(!lastReset) return; // primera vez que se usa la app, no hay semana previa que cerrar
   if(weeklyStats.some(w=>w.week===lastReset)) return; // ya capturada
+  const todayStr = new Date().toISOString().slice(0,10); // fecha del reset (inicio de la semana nueva)
   const completedLastWeek = history.filter(t=>t.cw===lastReset);
   const pendingCarryover = tasks.filter(t=>!t.completed);
   const byQ = {q1:{done:0,pend:0},q2:{done:0,pend:0},q3:{done:0,pend:0},q4:{done:0,pend:0}};
   completedLastWeek.forEach(t=>{ byQ[Q(t)].done++; });
-  pendingCarryover.forEach(t=>{ byQ[Q(t)].pend++; });
+  pendingCarryover.forEach(t=>{
+    byQ[Q(t)].pend++;
+    // Suma las subtareas aún pendientes, salvo las programadas para la semana nueva o después
+    (t.subtasks||[]).forEach(s=>{
+      if(s.done) return;
+      if(s.due && s.due >= todayStr) return;
+      byQ[Q(t)].pend++;
+    });
+  });
+  const totalDone = byQ.q1.done+byQ.q2.done+byQ.q3.done+byQ.q4.done;
+  const totalPend = byQ.q1.pend+byQ.q2.pend+byQ.q3.pend+byQ.q4.pend;
   weeklyStats.push({
     week: lastReset,
-    total: completedLastWeek.length + pendingCarryover.length,
-    completed: completedLastWeek.length,
+    total: totalDone + totalPend,
+    completed: totalDone,
     q1done: byQ.q1.done, q1pend: byQ.q1.pend,
     q2done: byQ.q2.done, q2pend: byQ.q2.pend,
     q3done: byQ.q3.done, q3pend: byQ.q3.pend,
