@@ -344,7 +344,7 @@ const QM = {
 
 let tasks=[], history=[], recurring=[], weeklyStats=[];
 let idc=1, ridc=1, selDays=[], editId=null;
-let loaded=false, isRemote=false, isPro=false, lastReset='', canceled=false, proAccessUntil=0;
+let loaded=false, isRemote=false, isPro=false, lastReset='', canceled=false, proAccessUntil=0, flowCustomerId=null, flowSubscriptionId=null;
 let curRef=null, curLis=null;
 
 function Q(t){ return t.urgent&&t.important?'q1':!t.urgent&&t.important?'q2':t.urgent&&!t.important?'q3':'q4'; }
@@ -356,7 +356,7 @@ function wk(){
   const y=m.getFullYear(), s=new Date(y,0,1);
   return `${y}-W${Math.ceil(((m-s)/86400000+s.getDay()+1)/7)}`;
 }
-function persist(){ if(isRemote||!curRef)return; set(curRef,{tasks,history,recurring,idc,ridc,lastReset,isPro,weeklyStats,canceled,proAccessUntil}); }
+function persist(){ if(isRemote||!curRef)return; set(curRef,{tasks,history,recurring,idc,ridc,lastReset,isPro,weeklyStats,canceled,proAccessUntil,flowCustomerId,flowSubscriptionId}); }
 
 // Captura estadísticas de la semana que termina, justo antes del reset semanal.
 // Se guarda solo la data cruda (sin costo de IA); el texto del análisis se genera
@@ -936,6 +936,8 @@ onAuthStateChanged(auth,user=>{
         weeklyStats=data.weeklyStats||[];
         canceled=data.canceled||false;
         proAccessUntil=data.proAccessUntil||0;
+        flowCustomerId=data.flowCustomerId||null;
+        flowSubscriptionId=data.flowSubscriptionId||null;
 
         // Si canceló la suscripción y ya pasó el período de gracia (30 días regalados), se desactiva el Pro
         if(canceled && proAccessUntil && Date.now() > proAccessUntil && isPro){
