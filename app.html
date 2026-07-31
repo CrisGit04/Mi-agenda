@@ -582,6 +582,7 @@ function renderHousehold(){
     el.innerHTML=`
       <div style="display:flex;flex-direction:column;gap:8px;">
         <button id="hh-create-btn" type="button">+ Crear hogar compartido</button>
+        <p style="font-size:11px;color:var(--tm);margin:0;text-align:center;">— o si tu pareja ya te envió un código —</p>
         <div style="display:flex;gap:6px;">
           <input id="hh-join-code" type="text" placeholder="Código de invitación" style="flex:1;text-transform:uppercase;">
           <button id="hh-join-btn" type="button">Unirse</button>
@@ -596,9 +597,20 @@ function renderHousehold(){
     <div style="font-size:13px;color:var(--t1);">
       ${memberCount>=2
         ? `✅ Vinculado — ambos pueden ver y completar las tareas compartidas`
-        : `<span style="color:var(--tm);">Comparte este código con tu pareja para vincularse:</span>
-           <div style="font-size:20px;font-weight:600;letter-spacing:2px;color:var(--accent);margin-top:4px;">${householdData.inviteCode}</div>`}
+        : `<p style="margin:0 0 8px;color:var(--tm);">Envíale este código a tu pareja (por WhatsApp, mensaje de texto, etc.). Ella debe entrar a su propia cuenta de Planwik, abrir esta misma tarjeta "Hogar compartido", y pegarlo en el campo "Unirse".</p>
+           <div style="display:flex;align-items:center;gap:8px;">
+             <div style="font-size:22px;font-weight:600;letter-spacing:3px;color:var(--accent);background:var(--s1);border-radius:var(--r);padding:8px 14px;">${householdData.inviteCode}</div>
+             <button id="hh-copy-btn" type="button" style="font-size:12px;">Copiar</button>
+           </div>
+           <p style="margin:8px 0 0;font-size:12px;color:var(--tm);">Esperando a que se una...</p>`}
     </div>`;
+  if(memberCount<2){
+    document.getElementById('hh-copy-btn')?.addEventListener('click', ()=>{
+      navigator.clipboard.writeText(householdData.inviteCode);
+      const b=document.getElementById('hh-copy-btn');
+      if(b){ b.textContent='¡Copiado!'; setTimeout(()=>{ b.textContent='Copiar'; },1500); }
+    });
+  }
 }
 async function doCreateHousehold(){
   const btn=document.getElementById('hh-create-btn');
