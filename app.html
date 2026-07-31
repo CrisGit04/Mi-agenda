@@ -168,7 +168,10 @@ html[data-theme="dark"] .cat-proyecto{background:#633806;color:#FAC775;}
       Planwik
     </h1>
     <div style="display:flex;align-items:center;gap:8px;">
-      <button id="themeToggle" type="button" title="Cambiar tema" style="font-size:15px;padding:4px 8px;height:auto;line-height:1;">🌙</button>
+      <div id="themeToggle" style="display:flex;align-items:center;background:var(--s1);border:.5px solid var(--border2);border-radius:999px;padding:2px;gap:2px;">
+        <button id="themeLight" type="button" title="Modo claro" style="font-size:13px;width:26px;height:26px;padding:0;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;">☀️</button>
+        <button id="themeDark" type="button" title="Modo oscuro" style="font-size:13px;width:26px;height:26px;padding:0;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;">🌙</button>
+      </div>
       <span id="ue"></span>
       <button id="lout" type="button" style="font-size:12px;padding:4px 10px;height:auto;">Salir</button>
     </div>
@@ -302,17 +305,26 @@ const CATC = { trabajo:'cat-trabajo', personal:'cat-personal', proyecto:'cat-pro
     if(explicit) return explicit === 'dark';
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
-  function updateIcon(){
-    const btn = document.getElementById('themeToggle');
-    if(btn) btn.textContent = currentIsDark() ? '🌙' : '☀️';
+  function updateIcons(){
+    const dark = currentIsDark();
+    const lightBtn = document.getElementById('themeLight');
+    const darkBtn = document.getElementById('themeDark');
+    if(!lightBtn||!darkBtn) return;
+    lightBtn.style.background = dark ? 'transparent' : 'var(--s2)';
+    lightBtn.style.boxShadow = dark ? 'none' : '0 1px 3px rgba(0,0,0,.15)';
+    lightBtn.style.opacity = dark ? '.45' : '1';
+    darkBtn.style.background = dark ? 'var(--s2)' : 'transparent';
+    darkBtn.style.boxShadow = dark ? '0 1px 3px rgba(0,0,0,.15)' : 'none';
+    darkBtn.style.opacity = dark ? '1' : '.45';
   }
-  updateIcon();
-  document.getElementById('themeToggle').addEventListener('click', () => {
-    const next = currentIsDark() ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('planwikTheme', next);
-    updateIcon();
-  });
+  function setTheme(mode){
+    document.documentElement.setAttribute('data-theme', mode);
+    localStorage.setItem('planwikTheme', mode);
+    updateIcons();
+  }
+  updateIcons();
+  document.getElementById('themeLight').addEventListener('click', () => setTheme('light'));
+  document.getElementById('themeDark').addEventListener('click', () => setTheme('dark'));
 })();
 
 const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
