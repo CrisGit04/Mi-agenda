@@ -356,7 +356,7 @@ function wk(){
   const y=m.getFullYear(), s=new Date(y,0,1);
   return `${y}-W${Math.ceil(((m-s)/86400000+s.getDay()+1)/7)}`;
 }
-function persist(){ if(isRemote||!curRef)return; set(curRef,{tasks,history,recurring,idc,ridc,lastReset,isPro,weeklyStats}); }
+function persist(){ if(isRemote||!curRef)return; set(curRef,{tasks,history,recurring,idc,ridc,lastReset,isPro,weeklyStats,canceled,proAccessUntil}); }
 
 // Captura estadísticas de la semana que termina, justo antes del reset semanal.
 // Se guarda solo la data cruda (sin costo de IA); el texto del análisis se genera
