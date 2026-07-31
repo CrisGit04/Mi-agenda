@@ -255,6 +255,12 @@ html[data-theme="dark"] .cat-proyecto{background:#633806;color:#FAC775;}
     <div id="weekly-content" style="display:none;margin-top:10px;padding-top:10px;border-top:.5px solid var(--border);font-size:14px;line-height:1.5;color:var(--t1);"></div>
   </div>
 
+  <div class="card" id="household-card">
+    <p class="stitle" style="margin:0 0 2px;">👥 Hogar compartido</p>
+    <p style="font-size:12px;color:var(--tm);margin:0 0 10px;">Comparte tareas con tu pareja — ambos las ven y las pueden completar</p>
+    <div id="household-content"></div>
+  </div>
+
   <p class="stitle">▦ Matriz de prioridad</p>
   <div class="matrix" id="matrix"></div>
   <p class="stitle">📅 Carga semanal</p>
@@ -361,6 +367,8 @@ async function upgradeToPro(btnEl){
 window.upgradeToPro = upgradeToPro;
 
 const CANCEL_SUBSCRIPTION_URL = 'https://cancel-flow-subscription-958800466783.southamerica-west1.run.app';
+const CREATE_HOUSEHOLD_URL = 'https://create-household-958800466783.southamerica-west1.run.app';
+const JOIN_HOUSEHOLD_URL = 'https://join-household-958800466783.southamerica-west1.run.app';
 
 async function cancelSubscription(btnEl){
   const confirmed = window.confirm('¿Seguro que quieres cancelar tu suscripción Pro? No se te cobrará de nuevo, y mantienes el acceso Pro por 30 días más desde hoy.');
@@ -401,7 +409,7 @@ const QM = {
 
 let tasks=[], history=[], recurring=[], weeklyStats=[];
 let idc=1, ridc=1, selDays=[], editId=null;
-let loaded=false, isRemote=false, isPro=false, lastReset='', canceled=false, proAccessUntil=0, flowCustomerId=null, flowSubscriptionId=null;
+let loaded=false, isRemote=false, isPro=false, lastReset='', canceled=false, proAccessUntil=0, flowCustomerId=null, flowSubscriptionId=null, householdId=null;
 let curRef=null, curLis=null;
 
 function Q(t){ return t.urgent&&t.important?'q1':!t.urgent&&t.important?'q2':t.urgent&&!t.important?'q3':'q4'; }
@@ -554,6 +562,82 @@ function qBuild(qid){
   }
   if(!items.length)return'<p style="font-size:12px;color:var(--tm);margin:0;">Sin tareas</p>';
   return items.map(x=>x.type==='task'?tCard(x.obj):rCard(x.obj,tasks.filter(t=>t.rid===x.obj.id))).join('');
+}
+
+let hhRef=null, hhLis=null, householdData=null;
+function watchHousehold(){
+  if(hhRef&&hhLis){ off(hhRef,'value',hhLis); hhRef=null; hhLis=null; }
+  householdData=null;
+  if(!householdId){ renderHousehold(); return; }
+  hhRef=ref(db, `households/${householdId}`);
+  hhLis=onValue(hhRef, snap=>{
+    householdData=snap.val();
+    renderHousehold();
+  });
+}
+function renderHousehold(){
+  const el=document.getElementById('household-content');
+  if(!el) return;
+  if(!householdId || !householdData){
+    el.innerHTML=`
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button id="hh-create-btn" type="button">+ Crear hogar compartido</button>
+        <div style="display:flex;gap:6px;">
+          <input id="hh-join-code" type="text" placeholder="Código de invitación" style="flex:1;text-transform:uppercase;">
+          <button id="hh-join-btn" type="button">Unirse</button>
+        </div>
+      </div>`;
+    document.getElementById('hh-create-btn').addEventListener('click', doCreateHousehold);
+    document.getElementById('hh-join-btn').addEventListener('click', doJoinHousehold);
+    return;
+  }
+  const memberCount=Object.keys(householdData.members||{}).length;
+  el.innerHTML=`
+    <div style="font-size:13px;color:var(--t1);">
+      ${memberCount>=2
+        ? `✅ Vinculado — ambos pueden ver y completar las tareas compartidas`
+        : `<span style="color:var(--tm);">Comparte este código con tu pareja para vincularse:</span>
+           <div style="font-size:20px;font-weight:600;letter-spacing:2px;color:var(--accent);margin-top:4px;">${householdData.inviteCode}</div>`}
+    </div>`;
+}
+async function doCreateHousehold(){
+  const btn=document.getElementById('hh-create-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Creando...'; }
+  try{
+    const idToken = await auth.currentUser.getIdToken();
+    const res = await fetch(CREATE_HOUSEHOLD_URL, { method:'POST', headers:{ 'Authorization': `Bearer ${idToken}` } });
+    const data = await res.json();
+    if(!data.householdId) throw new Error(data.error || 'No se pudo crear el hogar');
+    householdId = data.householdId;
+    watchHousehold();
+  }catch(err){
+    console.error(err);
+    alert('No se pudo crear el hogar compartido. Intenta de nuevo.');
+    if(btn){ btn.disabled=false; btn.textContent='+ Crear hogar compartido'; }
+  }
+}
+async function doJoinHousehold(){
+  const input=document.getElementById('hh-join-code');
+  const code=(input?.value||'').trim();
+  if(!code){ alert('Ingresa el código de invitación.'); return; }
+  const btn=document.getElementById('hh-join-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Uniendo...'; }
+  try{
+    const idToken = await auth.currentUser.getIdToken();
+    const res = await fetch(JOIN_HOUSEHOLD_URL, {
+      method:'POST',
+      headers:{ 'Authorization': `Bearer ${idToken}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if(!data.householdId) throw new Error(data.error || 'No se pudo unir al hogar');
+    householdId = data.householdId;
+    watchHousehold();
+  }catch(err){
+    console.error(err);
+    alert(err.message || 'No se pudo unir al hogar. Revisa el código.');
+    if(btn){ btn.disabled=false; btn.textContent='Unirse'; }
+  }
 }
 
 function render(){
@@ -977,6 +1061,8 @@ onAuthStateChanged(auth,user=>{
     if(curRef&&curLis)off(curRef,'value',curLis);
     curRef=ref(db,`users/${user.uid}/agenda`);
     loaded=false; tasks=[]; history=[]; recurring=[]; weeklyStats=[]; idc=1; ridc=1; lastReset=''; isPro=false;
+    if(hhRef&&hhLis){ off(hhRef,'value',hhLis); hhRef=null; hhLis=null; }
+    householdId=null; householdData=null;
     curLis=onValue(curRef,snap=>{
       const data=snap.val();
       isRemote=true;
@@ -995,6 +1081,10 @@ onAuthStateChanged(auth,user=>{
         proAccessUntil=data.proAccessUntil||0;
         flowCustomerId=data.flowCustomerId||null;
         flowSubscriptionId=data.flowSubscriptionId||null;
+        if(data.householdId !== householdId){
+          householdId=data.householdId||null;
+          watchHousehold();
+        }
 
         // Si canceló la suscripción y ya pasó el período de gracia (30 días regalados), se desactiva el Pro
         if(canceled && proAccessUntil && Date.now() > proAccessUntil && isPro){
