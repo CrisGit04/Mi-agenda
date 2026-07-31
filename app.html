@@ -880,6 +880,12 @@ onAuthStateChanged(auth,user=>{
         lastReset=data.lastReset||'';
         isPro=data.isPro||false;
         weeklyStats=data.weeklyStats||[];
+
+        // Si canceló la suscripción y ya pasó el período de gracia (30 días regalados), se desactiva el Pro
+        if(data.canceled && data.proAccessUntil && Date.now() > data.proAccessUntil && isPro){
+          isPro = false;
+          set(ref(db, `users/${user.uid}/agenda/isPro`), false);
+        }
       }
       // Deduplicate: remove old-style instances if new-style already exist for same rid+day
 const seen = new Set();
