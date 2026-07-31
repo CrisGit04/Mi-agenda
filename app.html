@@ -22,7 +22,16 @@
   --warn:#633806;--bgw:#faeeda;
   --r:8px;
 }
-@media(prefers-color-scheme:dark){:root{
+html[data-theme="dark"]{
+  --bg:#161513;--s1:#211f1c;--s2:#272521;
+  --border:#3a3833;--border2:#4a4842;
+  --t1:#f1efe8;--t2:#b4b2a9;--tm:#888780;
+  --accent:#85b7eb;--bga:#0c447c;--borda:#378add;
+  --danger:#f7c1c1;--bgd:#791f1f;
+  --success:#9fe1cb;--bgs:#085041;
+  --warn:#fac775;--bgw:#854f0b;
+}
+@media(prefers-color-scheme:dark){html:not([data-theme="light"]):not([data-theme="dark"]){
   --bg:#161513;--s1:#211f1c;--s2:#272521;
   --border:#3a3833;--border2:#4a4842;
   --t1:#f1efe8;--t2:#b4b2a9;--tm:#888780;
@@ -55,10 +64,13 @@ button{cursor:pointer;}button:hover{background:var(--s1);}
 .cat-trabajo{background:#E6F1FB;color:#0C447C;}
 .cat-personal{background:#FBEAF0;color:#72243E;}
 .cat-proyecto{background:#FAEEDA;color:#633806;}
+html[data-theme="dark"] .cat-trabajo{background:#0C447C;color:#B5D4F4;}
+html[data-theme="dark"] .cat-personal{background:#72243E;color:#F4C0D1;}
+html[data-theme="dark"] .cat-proyecto{background:#633806;color:#FAC775;}
 @media(prefers-color-scheme:dark){
-  .cat-trabajo{background:#0C447C;color:#B5D4F4;}
-  .cat-personal{background:#72243E;color:#F4C0D1;}
-  .cat-proyecto{background:#633806;color:#FAC775;}
+  html:not([data-theme="light"]):not([data-theme="dark"]) .cat-trabajo{background:#0C447C;color:#B5D4F4;}
+  html:not([data-theme="light"]):not([data-theme="dark"]) .cat-personal{background:#72243E;color:#F4C0D1;}
+  html:not([data-theme="light"]):not([data-theme="dark"]) .cat-proyecto{background:#633806;color:#FAC775;}
 }
 #sb{font-size:12px;color:var(--tm);margin-bottom:1rem;display:flex;align-items:center;gap:6px;}
 #sd{width:7px;height:7px;border-radius:50%;background:var(--tm);flex-shrink:0;}
@@ -106,7 +118,7 @@ button{cursor:pointer;}button:hover{background:var(--s1);}
 #ai-confirm{background:var(--accent);color:#fff;border:none;font-weight:500;width:100%;}
 #ai-loading{font-size:13px;color:var(--tm);text-align:center;display:none;}
 
-#ibtn{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;background:#1a4fd6;color:#fff;border:none;border-radius:999px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(26,79,214,.4);display:none;align-items:center;gap:8px;white-space:nowrap;}
+#ibtn{background:#1a4fd6;color:#fff;border:none;border-radius:999px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(26,79,214,.4);display:flex;align-items:center;gap:8px;white-space:nowrap;}
 #imodal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center;}
 #imodal.open{display:flex;}
 #ibox{background:var(--s2);border-radius:20px 20px 0 0;padding:1.5rem;width:100%;max-width:480px;display:flex;flex-direction:column;gap:1rem;}
@@ -156,6 +168,7 @@ button{cursor:pointer;}button:hover{background:var(--s1);}
       Planwik
     </h1>
     <div style="display:flex;align-items:center;gap:8px;">
+      <button id="themeToggle" type="button" title="Cambiar tema" style="font-size:15px;padding:4px 8px;height:auto;line-height:1;">🌙</button>
       <span id="ue"></span>
       <button id="lout" type="button" style="font-size:12px;padding:4px 10px;height:auto;">Salir</button>
     </div>
@@ -202,7 +215,7 @@ button{cursor:pointer;}button:hover{background:var(--s1);}
     <div class="g3">
       <select id="tu"><option value="1">Urgente</option><option value="0">No urgente</option></select>
       <select id="ti"><option value="1">Importante</option><option value="0">No importante</option></select>
-      <div style="position:relative;">
+      <div style="position:relative;" id="tdueWrap">
         <input id="tdue" type="date" style="width:100%;padding-left:28px;">
         <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;">📅</span>
       </div>
@@ -254,7 +267,10 @@ button{cursor:pointer;}button:hover{background:var(--s1);}
   </div>
 </div>
 
-<button id="ibtn" type="button">📲 Instalar en tu celular</button>
+<div id="ibtnWrap" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;align-items:center;gap:6px;">
+  <button id="ibtn" type="button" style="position:static;transform:none;">📲 Instalar en tu celular</button>
+  <button id="ibtnClose" type="button" title="Cerrar" style="width:28px;height:28px;border-radius:50%;background:var(--s2);border:.5px solid var(--border2);color:var(--t1);font-size:14px;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+</div>
 <div id="imodal">
   <div id="ibox">
     <h3>Instalar Planwik</h3>
@@ -276,7 +292,36 @@ const auth = getAuth(fbApp);
 
 const CAT = { trabajo:'Trabajo', personal:'Personal', proyecto:'Proyecto especial' };
 const CATC = { trabajo:'cat-trabajo', personal:'cat-personal', proyecto:'cat-proyecto' };
+// Tema claro/oscuro — respeta preferencia guardada, o el sistema si no eligió ninguna
+(function(){
+  const saved = localStorage.getItem('planwikTheme'); // 'light' | 'dark' | null
+  if(saved) document.documentElement.setAttribute('data-theme', saved);
+
+  function currentIsDark(){
+    const explicit = document.documentElement.getAttribute('data-theme');
+    if(explicit) return explicit === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function updateIcon(){
+    const btn = document.getElementById('themeToggle');
+    if(btn) btn.textContent = currentIsDark() ? '🌙' : '☀️';
+  }
+  updateIcon();
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    const next = currentIsDark() ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('planwikTheme', next);
+    updateIcon();
+  });
+})();
+
 const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
+// Click en cualquier parte del campo de fecha abre el selector (no solo el ícono nativo)
+document.getElementById('tdueWrap').addEventListener('click', () => {
+  const inp = document.getElementById('tdue');
+  if(inp.showPicker){ try{ inp.showPicker(); }catch(err){} }
+});
 const FLOW = 'https://www.flow.cl/uri/snMRF28h0';
 const CREATE_CUSTOMER_URL = 'https://create-flow-customer-958800466783.southamerica-west1.run.app';
 
@@ -970,15 +1015,29 @@ weekReset(); render(); isRemote=false;
 
 // install PWA
 const ibtn=document.getElementById('ibtn');
+const ibtnWrap=document.getElementById('ibtnWrap');
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
 const isAndroid=/android/i.test(navigator.userAgent);
 const isSA=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone;
+const INSTALL_DISMISS_DAYS = 14;
+function installDismissedRecently(){
+  const ts = localStorage.getItem('planwikInstallDismissedAt');
+  if(!ts) return false;
+  const days = (Date.now() - Number(ts)) / (1000*60*60*24);
+  return days < INSTALL_DISMISS_DAYS;
+}
+function showInstallBtn(){ if(!isSA && !installDismissedRecently()) ibtnWrap.style.display='flex'; }
+function hideInstallBtn(){ ibtnWrap.style.display='none'; }
 let dp=null;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;ibtn.style.display='flex';});
-if(isIOS&&!isSA)ibtn.style.display='flex';
-if(isAndroid&&!isSA)setTimeout(()=>{if(!dp)ibtn.style.display='flex';},1000);
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;showInstallBtn();});
+if(isIOS&&!isSA)showInstallBtn();
+if(isAndroid&&!isSA)setTimeout(()=>{if(!dp)showInstallBtn();},1000);
+document.getElementById('ibtnClose').addEventListener('click',()=>{
+  localStorage.setItem('planwikInstallDismissedAt', String(Date.now()));
+  hideInstallBtn();
+});
 ibtn.addEventListener('click',()=>{
-  if(dp){dp.prompt();dp.userChoice.then(()=>{dp=null;ibtn.style.display='none';});return;}
+  if(dp){dp.prompt();dp.userChoice.then(()=>{dp=null;hideInstallBtn();});return;}
   const desc=document.getElementById('idesc'), steps=document.getElementById('isteps');
   if(isIOS){
     desc.textContent='Sigue estos pasos en Safari para instalar Planwik:';
