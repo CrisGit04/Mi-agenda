@@ -412,6 +412,10 @@ function tCard(t){
   const h=hu(t.due), al=h!==null&&h<=24;
   const subs=t.subtasks||[];
   const subDone=subs.filter(s=>s.done).length;
+  const visibleSubs=subs.filter(s=>!s.done).sort((a,b)=>{
+    if(!a.due&&!b.due)return 0; if(!a.due)return 1; if(!b.due)return -1;
+    return new Date(a.due)-new Date(b.due);
+  });
   return `<div data-orow="task:${t.id}" style="background:var(--s2);border:.5px solid ${al?'var(--bord)':'var(--border)'};border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:4px;margin-bottom:6px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
       <span data-draghandle="task:${t.id}" style="cursor:grab;touch-action:none;user-select:none;color:var(--tm);font-size:14px;padding:0 2px;flex-shrink:0;">⠿</span>
@@ -427,8 +431,8 @@ function tCard(t){
       ${t.due?`<span style="font-size:11px;${al?'color:var(--danger);font-weight:500;':'color:var(--tm);'}">${al?'⚠ ':''}${fd(t.due)}</span>`:''}
       ${subs.length?`<span style="font-size:11px;color:var(--tm);">☑ ${subDone}/${subs.length} subtareas</span>`:''}
     </div>
-    ${subs.length?`<div style="border-top:.5px solid var(--border);margin-top:2px;padding-top:6px;display:flex;flex-direction:column;gap:5px;">
-      ${subs.map(s=>{
+    ${visibleSubs.length?`<div style="border-top:.5px solid var(--border);margin-top:2px;padding-top:6px;display:flex;flex-direction:column;gap:5px;">
+      ${visibleSubs.map(s=>{
         const sh=hu(s.due), sal=sh!==null&&sh<=24&&!s.done;
         return `<div data-subrow="${t.id}|${s.id}" style="display:flex;align-items:center;gap:6px;">
         <span data-draghandle="sub:${t.id}:${s.id}" style="cursor:grab;touch-action:none;user-select:none;color:var(--tm);font-size:12px;padding:0 1px;flex-shrink:0;">⠿</span>
@@ -438,6 +442,7 @@ function tCard(t){
           <input data-subdue="${t.id}|${s.id}" type="date" value="${s.due||''}" style="position:absolute;inset:0;width:100%;height:100%;border:none;background:transparent;font-size:11px;padding:0;cursor:pointer;${s.due?(sal?'color:var(--danger);font-weight:600;':'color:var(--tm);'):'color:transparent;'}">
           ${!s.due?`<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:13px;opacity:.55;">📅</span>`:''}
         </div>
+        <button data-subedit="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✎</button>
         <button data-subdel="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✕</button>
       </div>`;
       }).join('')}
@@ -447,7 +452,7 @@ function tCard(t){
 }
 
 function rCard(r, insts){
-  const pend=insts.filter(t=>!t.completed);
+  const pend=insts.filter(t=>!t.completed).sort((a,b)=>DAYS.indexOf(a.day)-DAYS.indexOf(b.day));
   if(!pend.length)return'';
   return `<div data-orow="rec:${r.id}" style="background:var(--s2);border:.5px solid var(--border);border-radius:var(--r);padding:8px 10px;margin-bottom:6px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px;">
@@ -573,6 +578,16 @@ function doToggleSubtask(taskId,subId){
 function doDeleteSubtask(taskId,subId){
   const t=tasks.find(x=>x.id===taskId); if(!t||!t.subtasks)return;
   t.subtasks=t.subtasks.filter(x=>x.id!==subId);
+  render(); persist();
+}
+function doEditSubtask(taskId,subId){
+  const t=tasks.find(x=>x.id===taskId); if(!t||!t.subtasks)return;
+  const s=t.subtasks.find(x=>x.id===subId); if(!s)return;
+  const nuevo=window.prompt('Editar subtarea:', s.name);
+  if(nuevo===null)return; // canceló
+  const limpio=nuevo.trim();
+  if(!limpio)return;
+  s.name=limpio;
   render(); persist();
 }
 function doSetSubDue(taskId,subId,due){
@@ -757,6 +772,7 @@ document.getElementById('matrix').addEventListener('click',e=>{
   const dl=e.target.closest('[data-del]'); if(dl){doDelete(dl.getAttribute('data-del'));return;}
   const sd=e.target.closest('[data-subdone]'); if(sd){const[tid,sid]=sd.getAttribute('data-subdone').split('|');doToggleSubtask(tid,sid);return;}
   const sdl=e.target.closest('[data-subdel]'); if(sdl){const[tid,sid]=sdl.getAttribute('data-subdel').split('|');doDeleteSubtask(tid,sid);return;}
+  const sde=e.target.closest('[data-subedit]'); if(sde){const[tid,sid]=sde.getAttribute('data-subedit').split('|');doEditSubtask(tid,sid);return;}
   const rmr=e.target.closest('[data-rmr]'); if(rmr){doRemRec(rmr.getAttribute('data-rmr'));return;}
   const er=e.target.closest('[data-editrec]'); if(er){doEditRec(er.getAttribute('data-editrec'));return;}
   const ed=e.target.closest('[data-edit]'); if(ed){doEdit(ed.getAttribute('data-edit'));}
