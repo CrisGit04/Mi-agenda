@@ -92,31 +92,37 @@ html[data-theme="dark"] .cat-proyecto{background:#633806;color:#FAC775;}
 #ah h1{margin:0;font-size:20px;font-weight:500;display:flex;align-items:center;gap:8px;}
 #ue{font-size:12px;color:var(--tm);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
-/* ── AI PANEL ── */
-#ai-panel{
-  background:var(--s2);border:.5px solid var(--border);border-radius:12px;
-  padding:1rem 1.25rem;margin-bottom:1.5rem;display:none;flex-direction:column;gap:10px;
-}
-#ai-panel.open{display:flex;}
+/* ── SELECTOR DE MODO ── */
+#mode-tabs{display:flex;gap:6px;margin-bottom:14px;}
+.mode-tab{flex:1;font-size:13px;font-weight:500;padding:9px 8px;height:auto;
+  background:var(--s1);border:.5px solid var(--border2);border-radius:var(--r);
+  color:var(--t2);cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.mode-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* ── PANEL IA / VOZ ── */
+#panel-ia,#panel-voz{margin-bottom:12px;}
 #ai-input{width:100%;min-height:72px;border-radius:var(--r);border:.5px solid var(--border2);
   background:var(--s1);color:var(--t1);padding:10px;font-size:14px;font-family:inherit;
   resize:none;line-height:1.5;}
 #ai-input:focus{outline:none;border-color:var(--accent);}
-#ai-actions{display:flex;gap:8px;align-items:center;}
-#mic-btn{width:36px;height:36px;border-radius:50%;border:.5px solid var(--border2);
+#mic-btn{width:64px;height:64px;border-radius:50%;border:.5px solid var(--border2);
   background:var(--s1);display:flex;align-items:center;justify-content:center;
-  font-size:16px;cursor:pointer;flex-shrink:0;transition:all .2s;}
+  font-size:26px;cursor:pointer;flex-shrink:0;transition:all .2s;}
 #mic-btn.recording{background:#e53935;border-color:#e53935;animation:pulse .8s infinite;}
 @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
-#ai-send{flex:1;font-weight:500;background:var(--accent);color:#fff;border:none;}
-#ai-preview{background:var(--s1);border-radius:var(--r);padding:10px 12px;
-  border:.5px solid var(--border);display:none;flex-direction:column;gap:8px;}
+#ai-loading{font-size:13px;color:var(--tm);text-align:center;padding:8px 0;display:none;}
+
+/* ── TARJETA DE SUGERENCIA (compartida entre modo IA y Voz) ── */
+#ai-preview{background:var(--s1);border-radius:var(--r);padding:12px;
+  border:.5px solid var(--border);display:none;flex-direction:column;gap:8px;margin-bottom:12px;}
 #ai-preview.show{display:flex;}
-.preview-row{display:flex;align-items:center;gap:8px;font-size:13px;}
-.preview-label{color:var(--tm);min-width:80px;font-size:12px;}
-.preview-val{color:var(--t1);font-weight:500;}
-#ai-confirm{background:var(--accent);color:#fff;border:none;font-weight:500;width:100%;}
-#ai-loading{font-size:13px;color:var(--tm);text-align:center;display:none;}
+.preview-label{color:var(--tm);font-size:11px;display:block;margin-bottom:4px;}
+#pv-name{font-size:14px;font-weight:500;width:100%;}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{font-size:12px;padding:6px 12px;height:auto;border-radius:999px;
+  background:var(--s2);border:.5px solid var(--border2);color:var(--t2);cursor:pointer;white-space:nowrap;}
+.chip.active{background:var(--bga);border-color:var(--borda);color:var(--accent);font-weight:600;}
+#pv-date{font-size:13px;}
 
 #ibtn{background:#1a4fd6;color:#fff;border:none;border-radius:999px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 20px rgba(26,79,214,.4);display:flex;align-items:center;gap:8px;white-space:nowrap;}
 #imodal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center;}
@@ -182,60 +188,90 @@ html[data-theme="dark"] .cat-proyecto{background:#633806;color:#FAC775;}
   <div class="card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <p id="ftitle" style="font-size:14px;font-weight:500;margin:0;">Nueva tarea</p>
-      <button id="ai-toggle" type="button" style="font-size:12px;padding:4px 12px;height:auto;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:999px;font-weight:500;cursor:pointer;">✨ Ingresar con IA</button>
     </div>
 
-    <div id="ai-panel">
-      <p style="font-size:12px;color:var(--tm);margin:0;">Describe tu tarea en lenguaje natural — la IA la clasifica automáticamente</p>
-      <textarea id="ai-input" placeholder="Ej: Tengo reunión urgente con el cliente el viernes, necesito preparar la presentación antes..."></textarea>
-      <div id="ai-actions">
-        <button id="mic-btn" type="button" title="Dictar por voz">🎤</button>
-        <button id="ai-send" type="button">✨ Analizar con IA</button>
-        <button id="ai-cancel" type="button" style="font-size:13px;padding:4px 10px;height:auto;">✕</button>
+    <div id="mode-tabs">
+      <button type="button" class="mode-tab active" data-mode="manual">✎ Manual</button>
+      <button type="button" class="mode-tab" data-mode="ia">✨ Con IA</button>
+      <button type="button" class="mode-tab" data-mode="voz">🎤 Por voz</button>
+    </div>
+
+    <div id="panel-manual">
+      <div class="g2">
+        <input id="tn" type="text" placeholder="Ej: Revisar propuesta con el cliente">
+        <select id="tc">
+          <option value="trabajo">Trabajo</option>
+          <option value="personal">Personal</option>
+          <option value="proyecto">Proyecto especial</option>
+        </select>
       </div>
-      <div id="ai-loading">⏳ Analizando tu tarea...</div>
-      <div id="ai-preview">
-        <p style="font-size:12px;font-weight:500;color:var(--t2);margin:0;">Vista previa — confirma antes de agregar:</p>
-        <div class="preview-row"><span class="preview-label">Tarea</span><span class="preview-val" id="pv-name"></span></div>
-        <div class="preview-row"><span class="preview-label">Categoría</span><span class="preview-val" id="pv-cat"></span></div>
-        <div class="preview-row"><span class="preview-label">Prioridad</span><span class="preview-val" id="pv-prio"></span></div>
-        <div class="preview-row"><span class="preview-label">Fecha</span><span class="preview-val" id="pv-date"></span></div>
-        <div id="pv-subs-row" style="display:none;flex-direction:column;gap:4px;padding:8px 0 0;">
-          <span class="preview-label">Subtareas sugeridas</span>
-          <div id="pv-subs" style="font-size:12px;color:var(--t2);display:flex;flex-direction:column;gap:3px;"></div>
+      <div class="g3">
+        <select id="tu"><option value="1">Urgente</option><option value="0">No urgente</option></select>
+        <select id="ti"><option value="1">Importante</option><option value="0">No importante</option></select>
+        <div style="position:relative;" id="tdueWrap">
+          <input id="tdue" type="date" style="width:100%;padding-left:28px;">
+          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;">📅</span>
         </div>
-        <button id="ai-confirm" type="button">+ Agregar esta tarea</button>
+      </div>
+      <label id="rlabel" style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:8px;">
+        <input id="trec" type="checkbox" style="width:auto;height:auto;">
+        <span>🔁 Tarea recurrente (elige los días que se repite)</span>
+      </label>
+      <div id="rdays" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+        <button type="button" class="dchip" data-day="Lunes" style="padding:6px 10px;font-size:12px;">Lun</button>
+        <button type="button" class="dchip" data-day="Martes" style="padding:6px 10px;font-size:12px;">Mar</button>
+        <button type="button" class="dchip" data-day="Miércoles" style="padding:6px 10px;font-size:12px;">Mié</button>
+        <button type="button" class="dchip" data-day="Jueves" style="padding:6px 10px;font-size:12px;">Jue</button>
+        <button type="button" class="dchip" data-day="Viernes" style="padding:6px 10px;font-size:12px;">Vie</button>
+        <button type="button" class="dchip" data-day="Sábado" style="padding:6px 10px;font-size:12px;">Sáb</button>
+        <button type="button" class="dchip" data-day="Domingo" style="padding:6px 10px;font-size:12px;">Dom</button>
       </div>
     </div>
-    <div class="g2">
-      <input id="tn" type="text" placeholder="Nombre de la tarea">
-      <select id="tc">
-        <option value="trabajo">Trabajo</option>
-        <option value="personal">Personal</option>
-        <option value="proyecto">Proyecto especial</option>
-      </select>
+
+    <div id="panel-ia" style="display:none;">
+      <p style="font-size:12px;color:var(--tm);margin:0 0 8px;">Describe tu tarea — la IA la clasifica automáticamente mientras escribes</p>
+      <textarea id="ai-input" placeholder="Ej: Tengo reunión urgente con el cliente el viernes, necesito preparar la presentación antes..."></textarea>
     </div>
-    <div class="g3">
-      <select id="tu"><option value="1">Urgente</option><option value="0">No urgente</option></select>
-      <select id="ti"><option value="1">Importante</option><option value="0">No importante</option></select>
-      <div style="position:relative;" id="tdueWrap">
-        <input id="tdue" type="date" style="width:100%;padding-left:28px;">
-        <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;">📅</span>
+
+    <div id="panel-voz" style="display:none;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0;">
+        <button id="mic-btn" type="button" title="Dictar por voz">🎤</button>
+        <p id="voz-hint" style="font-size:12px;color:var(--tm);margin:0;text-align:center;">Toca el micrófono y describe tu tarea</p>
+        <p id="voz-transcript" style="font-size:13px;color:var(--t1);margin:0;text-align:center;font-style:italic;"></p>
       </div>
     </div>
-    <label id="rlabel" style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:8px;">
-      <input id="trec" type="checkbox" style="width:auto;height:auto;">
-      <span>🔁 Tarea recurrente (elige los días que se repite)</span>
-    </label>
-    <div id="rdays" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-      <button type="button" class="dchip" data-day="Lunes" style="padding:6px 10px;font-size:12px;">Lun</button>
-      <button type="button" class="dchip" data-day="Martes" style="padding:6px 10px;font-size:12px;">Mar</button>
-      <button type="button" class="dchip" data-day="Miércoles" style="padding:6px 10px;font-size:12px;">Mié</button>
-      <button type="button" class="dchip" data-day="Jueves" style="padding:6px 10px;font-size:12px;">Jue</button>
-      <button type="button" class="dchip" data-day="Viernes" style="padding:6px 10px;font-size:12px;">Vie</button>
-      <button type="button" class="dchip" data-day="Sábado" style="padding:6px 10px;font-size:12px;">Sáb</button>
-      <button type="button" class="dchip" data-day="Domingo" style="padding:6px 10px;font-size:12px;">Dom</button>
+
+    <div id="ai-loading">⏳ Analizando tu tarea...</div>
+    <div id="ai-preview">
+      <div>
+        <span class="preview-label">Nombre de la tarea</span>
+        <input id="pv-name" type="text">
+      </div>
+      <div>
+        <span class="preview-label">Categoría</span>
+        <div class="chip-row">
+          <button type="button" class="chip" data-cat="trabajo">Trabajo</button>
+          <button type="button" class="chip" data-cat="personal">Personal</button>
+          <button type="button" class="chip" data-cat="proyecto">Proyecto especial</button>
+        </div>
+      </div>
+      <div>
+        <span class="preview-label">Prioridad</span>
+        <div class="chip-row">
+          <button type="button" class="chip" id="pv-urgent-chip">🔴 Urgente</button>
+          <button type="button" class="chip" id="pv-important-chip">🟢 Importante</button>
+        </div>
+      </div>
+      <div>
+        <span class="preview-label">Fecha</span>
+        <input id="pv-date" type="date">
+      </div>
+      <div id="pv-subs-row" style="display:none;flex-direction:column;gap:4px;">
+        <span class="preview-label">Subtareas sugeridas</span>
+        <div id="pv-subs" style="font-size:12px;color:var(--t2);display:flex;flex-direction:column;gap:3px;"></div>
+      </div>
     </div>
+
     <div style="display:flex;gap:8px;">
       <button id="addbtn" type="button" style="flex:1;font-weight:500;">+ Agregar tarea</button>
       <button id="cancelbtn" type="button" style="display:none;">Cancelar</button>
@@ -408,7 +444,7 @@ const QM = {
 };
 
 let tasks=[], history=[], recurring=[], weeklyStats=[];
-let idc=1, ridc=1, selDays=[], editId=null;
+let idc=1, ridc=1, selDays=[], editId=null, taskMode='manual';
 let loaded=false, isRemote=false, isPro=false, lastReset='', canceled=false, proAccessUntil=0, flowCustomerId=null, flowSubscriptionId=null, householdId=null;
 let curRef=null, curLis=null;
 
@@ -826,6 +862,7 @@ function doEditRec(id){
 function doEdit(id){
   const t=tasks.find(x=>x.id===id); if(!t)return;
   editId=id;
+  setMode('manual');
   document.getElementById('tn').value=t.name;
   document.getElementById('tc').value=t.cat;
   document.getElementById('tu').value=t.urgent?'1':'0';
@@ -871,6 +908,41 @@ document.getElementById('rdays').addEventListener('click',e=>{
   else{selDays.push(d);c.style.background='var(--bga)';c.style.borderColor='var(--borda)';}
 });
 document.getElementById('addbtn').addEventListener('click',()=>{
+  if(taskMode!=='manual'){
+    // Modo "Con IA" o "Por voz" — usa la sugerencia ya analizada (con las ediciones del usuario)
+    if(!aiPreview || !aiPreview.name || !aiPreview.name.trim()){
+      alert('Escribe o dicta la tarea primero, y espera a que la IA la analice.');
+      return;
+    }
+    const pend=tasks.filter(t=>!t.completed);
+    if(!isPro && pend.length>=FREE){
+      alert(`Tu semana ya no cabe en el plan gratis (${FREE} tareas). Desbloquea espacio ilimitado con Pro.`);
+      return;
+    }
+    const taskName=aiPreview.name.trim();
+    const subtasks=(aiPreview.subtasks||[]).map(n=>({id:'s'+Date.now()+Math.floor(Math.random()*1000),name:n,done:false}));
+    tasks.push({
+      id:'t'+(idc++),
+      name:taskName,
+      cat:aiPreview.category||aiPreview.cat||'trabajo',
+      urgent:Boolean(aiPreview.urgent),
+      important:Boolean(aiPreview.important),
+      day:'',
+      due:aiPreview.dueDate||'',
+      completed:false,
+      subtasks
+    });
+    render(); persist();
+    document.getElementById('ai-input').value='';
+    document.getElementById('voz-transcript').textContent='';
+    document.getElementById('ai-preview').classList.remove('show');
+    aiPreview=null;
+    const toast=document.getElementById('toast');
+    toast.textContent=`✨ Tarea agregada: ${taskName}`; toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'),2500);
+    return;
+  }
+
   const name=document.getElementById('tn').value.trim(); if(!name)return;
   const cat=document.getElementById('tc').value;
   const urgent=document.getElementById('tu').value==='1';
@@ -1170,18 +1242,25 @@ document.getElementById('imodal').addEventListener('click',e=>{if(e.target===doc
 let aiPreview = null;
 let isRecording = false;
 
-document.getElementById('ai-toggle').addEventListener('click', () => {
-  const panel = document.getElementById('ai-panel');
-  panel.classList.toggle('open');
-  if(panel.classList.contains('open')) document.getElementById('ai-input').focus();
-});
-
-document.getElementById('ai-cancel').addEventListener('click', () => {
-  document.getElementById('ai-panel').classList.remove('open');
-  document.getElementById('ai-input').value = '';
+function setMode(mode){
+  taskMode = mode;
+  document.querySelectorAll('.mode-tab').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('data-mode')===mode);
+  });
+  document.getElementById('panel-manual').style.display = mode==='manual' ? 'block' : 'none';
+  document.getElementById('panel-ia').style.display = mode==='ia' ? 'block' : 'none';
+  document.getElementById('panel-voz').style.display = mode==='voz' ? 'block' : 'none';
+  // Al cambiar de modo, limpiamos cualquier sugerencia pendiente para no mezclar contextos
   document.getElementById('ai-preview').classList.remove('show');
   document.getElementById('ai-loading').style.display = 'none';
+  document.getElementById('ai-input').value = '';
+  document.getElementById('voz-transcript').textContent = '';
   aiPreview = null;
+}
+document.getElementById('mode-tabs').addEventListener('click', e=>{
+  const btn = e.target.closest('.mode-tab');
+  if(!btn) return;
+  setMode(btn.getAttribute('data-mode'));
 });
 
 // Voz — MediaRecorder + Whisper (funciona en Safari iOS, a diferencia de webkitSpeechRecognition)
@@ -1217,6 +1296,7 @@ async function startRecording(){
     mediaStream.getTracks().forEach(t => t.stop());
     micBtn.textContent = '⏳';
     micBtn.disabled = true;
+    document.getElementById('voz-hint').textContent = 'Transcribiendo...';
 
     try{
       const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
@@ -1233,10 +1313,16 @@ async function startRecording(){
       if(data.error) throw new Error(data.error);
 
       const t = (data.text || '').trim();
-      if(t) aiInput.value = aiInput.value ? aiInput.value + ' ' + t : t;
+      if(t){
+        document.getElementById('voz-transcript').textContent = `"${t}"`;
+        document.getElementById('voz-hint').textContent = 'Toca el micrófono y describe tu tarea';
+        analyzeText(t);
+      } else {
+        document.getElementById('voz-hint').textContent = 'No se detectó audio. Intenta de nuevo.';
+      }
     }catch(err){
       console.error(err);
-      alert('No se pudo transcribir el audio. Intenta de nuevo o escribe la tarea manualmente.');
+      document.getElementById('voz-hint').textContent = 'No se pudo transcribir. Intenta de nuevo.';
     }finally{
       micBtn.disabled = false;
       micBtn.classList.remove('recording');
@@ -1248,7 +1334,8 @@ async function startRecording(){
   mediaRecorder.start();
   isRecording = true;
   micBtn.classList.add('recording');
-  micBtn.textContent = '⏹ Toca para parar';
+  micBtn.textContent = '⏹';
+  document.getElementById('voz-hint').textContent = 'Grabando... toca para detener';
 }
 
 function stopRecording(){
@@ -1331,14 +1418,12 @@ document.getElementById('weekly-btn').addEventListener('click', async () => {
   }
 });
 
-// Llamada a Claude API
-document.getElementById('ai-send').addEventListener('click', async () => {
-  const text = document.getElementById('ai-input').value.trim();
+// Llamada a Claude API — reutilizable desde el modo "Con IA" (debounce) y desde "Por voz"
+async function analyzeText(text){
   if(!text) return;
 
   document.getElementById('ai-loading').style.display = 'block';
   document.getElementById('ai-preview').classList.remove('show');
-  document.getElementById('ai-send').disabled = true;
 
   const today = new Date().toISOString().split('T')[0];
   const prompt = `Analiza esta descripción de tarea y extrae la información en formato JSON.
@@ -1377,8 +1462,6 @@ Reglas:
 
     if(!res.ok) throw new Error('Worker error: ' + res.status);
     const data = await res.json();
-    // Debug: log what we got
-    console.log('Worker response:', JSON.stringify(data));
     if(!data.content || !data.content[0]) {
       throw new Error('Respuesta inválida: ' + JSON.stringify(data));
     }
@@ -1388,78 +1471,71 @@ Reglas:
     const parsed = JSON.parse(jsonMatch[0]);
 
     aiPreview = parsed;
-    const catLabels = { trabajo:'Trabajo', personal:'Personal', proyecto:'Proyecto especial' };
-    const qLabels = {
-      'true,true': '🔴 Hacer ahora (Urgente + Importante)',
-      'false,true': '🟢 Planificar (No urgente + Importante)',
-      'true,false': '🟡 Delegar (Urgente + No importante)',
-      'false,false': '⚪ Posponer (No urgente + No importante)',
-    };
-    const qKey = `${parsed.urgent},${parsed.important}`;
-
-    document.getElementById('pv-name').textContent = parsed.name;
-    document.getElementById('pv-cat').textContent = catLabels[parsed.category] || parsed.category;
-    document.getElementById('pv-prio').textContent = qLabels[qKey] || qKey;
-    document.getElementById('pv-date').textContent = parsed.dueDate || 'Sin fecha';
-
-    const subsRow = document.getElementById('pv-subs-row');
-    const subsList = parsed.subtasks || [];
-    if(subsList.length){
-      document.getElementById('pv-subs').innerHTML = subsList.map(s=>`• ${s}`).join('<br>');
-      subsRow.style.display = 'flex';
-    } else {
-      subsRow.style.display = 'none';
-    }
-
+    renderAiPreview();
     document.getElementById('ai-preview').classList.add('show');
 
   } catch(e) {
-    alert('Error al analizar. Intenta de nuevo o agrega la tarea manualmente.');
     console.error(e);
+    alert('Error al analizar. Intenta de nuevo o agrega la tarea manualmente.');
   } finally {
     document.getElementById('ai-loading').style.display = 'none';
-    document.getElementById('ai-send').disabled = false;
   }
-});
+}
 
-// Confirmar y agregar tarea desde IA
-document.getElementById('ai-confirm').addEventListener('click', () => {
+function renderAiPreview(){
   if(!aiPreview) return;
-  const pend = tasks.filter(t=>!t.completed);
-  if(!isPro && pend.length >= FREE) {
-    alert(`Tu semana ya no cabe en el plan gratis (${FREE} tareas). Desbloquea espacio ilimitado con Pro.`);
-    return;
+  document.getElementById('pv-name').value = aiPreview.name || '';
+  document.getElementById('pv-date').value = aiPreview.dueDate || '';
+  document.querySelectorAll('[data-cat]').forEach(c=>{
+    c.classList.toggle('active', c.getAttribute('data-cat')===aiPreview.category);
+  });
+  document.getElementById('pv-urgent-chip').classList.toggle('active', !!aiPreview.urgent);
+  document.getElementById('pv-important-chip').classList.toggle('active', !!aiPreview.important);
+
+  const subsRow = document.getElementById('pv-subs-row');
+  const subsList = aiPreview.subtasks || [];
+  if(subsList.length){
+    document.getElementById('pv-subs').innerHTML = subsList.map(s=>`• ${s}`).join('<br>');
+    subsRow.style.display = 'flex';
+  } else {
+    subsRow.style.display = 'none';
   }
-  const taskName = aiPreview.name;
-  const subtasks = (aiPreview.subtasks || []).map(name => ({
-    id: 's'+Date.now()+Math.floor(Math.random()*1000),
-    name,
-    done: false
-  }));
-  const newTask = {
-    id: 't'+(idc++),
-    name: aiPreview.name,
-    cat: aiPreview.category || aiPreview.cat || 'trabajo',
-    urgent: Boolean(aiPreview.urgent),
-    important: Boolean(aiPreview.important),
-    day: '',
-    due: aiPreview.dueDate || '',
-    completed: false,
-    subtasks
-  };
-  console.log('Adding AI task:', newTask);
-  tasks.push(newTask);
-  render(); persist();
-  // Reset panel
-  document.getElementById('ai-panel').classList.remove('open');
-  document.getElementById('ai-input').value = '';
+}
+
+// Modo "Con IA" — analiza automáticamente mientras el usuario escribe (sin botón intermedio)
+let analyzeTimeout = null;
+document.getElementById('ai-input').addEventListener('input', () => {
+  clearTimeout(analyzeTimeout);
+  const text = document.getElementById('ai-input').value.trim();
   document.getElementById('ai-preview').classList.remove('show');
   aiPreview = null;
-  // Toast
-  const toast = document.getElementById('toast');
-  toast.textContent = `✨ Tarea agregada: ${taskName}`;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2500);
+  if(text.length < 8) return;
+  analyzeTimeout = setTimeout(() => analyzeText(text), 900);
+});
+
+// Edición de la sugerencia de la IA — el usuario puede corregir cualquier campo antes de agregar
+document.getElementById('pv-name').addEventListener('input', e => { if(aiPreview) aiPreview.name = e.target.value; });
+document.getElementById('pv-date').addEventListener('change', e => { if(aiPreview) aiPreview.dueDate = e.target.value; });
+document.getElementById('ai-preview').addEventListener('click', e => {
+  const catChip = e.target.closest('[data-cat]');
+  if(catChip){
+    if(!aiPreview) return;
+    aiPreview.category = catChip.getAttribute('data-cat');
+    document.querySelectorAll('[data-cat]').forEach(c=>c.classList.toggle('active', c===catChip));
+    return;
+  }
+  if(e.target.id==='pv-urgent-chip'){
+    if(!aiPreview) return;
+    aiPreview.urgent = !aiPreview.urgent;
+    e.target.classList.toggle('active', aiPreview.urgent);
+    return;
+  }
+  if(e.target.id==='pv-important-chip'){
+    if(!aiPreview) return;
+    aiPreview.important = !aiPreview.important;
+    e.target.classList.toggle('active', aiPreview.important);
+    return;
+  }
 });
 
 </script>
