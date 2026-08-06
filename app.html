@@ -44,6 +44,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 input,select,button{font-family:inherit;font-size:14px;border-radius:var(--r);border:.5px solid var(--border2);background:var(--s2);color:var(--t1);padding:8px 10px;height:36px;}
 button{cursor:pointer;}button:hover{background:var(--s1);}
 .card{background:var(--s2);border:.5px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.5rem;}
+
+#fab-add{
+  position:fixed;bottom:max(24px, env(safe-area-inset-bottom));right:20px;z-index:150;
+  width:60px;height:60px;border-radius:50%;background:var(--accent);color:#fff;
+  border:2px solid var(--s2);font-size:30px;font-weight:400;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 20px rgba(0,0,0,.35);cursor:pointer;
+}
 .g2{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:8px;}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;}
 .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem;}
@@ -53,6 +61,8 @@ button{cursor:pointer;}button:hover{background:var(--s1);}
 .stitle{font-size:14px;font-weight:500;color:var(--t2);margin:0 0 8px;}
 .matrix{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;}
 .quad{border-radius:12px;padding:10px;}
+.qhead{display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:8px;}
+.qchevron{font-size:20px;line-height:1;color:var(--tm);flex-shrink:0;display:inline-block;transition:transform .2s;}
 .quad .qt{font-size:13px;font-weight:500;margin:0;}
 .quad .qs{font-size:11px;color:var(--t2);margin:0 0 8px;}
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:1.5rem;}
@@ -143,6 +153,10 @@ html[data-theme="dark"] .cat-proyecto{background:#633806;color:#FAC775;}
   input,select,button{font-size:16px;}
   #ue{max-width:100px;}
 }
+@media(min-width:960px){
+  body{max-width:1200px;}
+  .summary{grid-template-columns:repeat(4,1fr);}
+}
 </style>
 </head>
 <body>
@@ -185,10 +199,10 @@ html[data-theme="dark"] .cat-proyecto{background:#633806;color:#FAC775;}
   <div id="sb"><span id="sd"></span><span id="st">Conectando...</span></div>
   <div id="banner" style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;padding:8px 12px;background:var(--s1);border-radius:var(--r);border:.5px solid var(--border);"></div>
 
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <p id="ftitle" style="font-size:14px;font-weight:500;margin:0;">Nueva tarea</p>
-    </div>
+  <button id="fab-add" type="button" title="Agregar tarea">+</button>
+
+  <div class="card" id="task-card">
+    <p id="ftitle" style="font-size:14px;font-weight:500;margin:0 0 12px;">Nueva tarea</p>
 
     <div id="mode-tabs">
       <button type="button" class="mode-tab active" data-mode="manual">✎ Manual</button>
@@ -297,7 +311,7 @@ html[data-theme="dark"] .cat-proyecto{background:#633806;color:#FAC775;}
     <div id="household-content"></div>
   </div>
 
-  <p class="stitle">▦ Matriz de prioridad</p>
+  <p class="stitle">▦ Mi Semana</p>
   <div class="matrix" id="matrix"></div>
   <p class="stitle">📅 Carga semanal</p>
   <div class="week" id="week"></div>
@@ -444,6 +458,7 @@ const QM = {
 };
 
 let tasks=[], history=[], recurring=[], weeklyStats=[];
+let collapsedQuads = JSON.parse(localStorage.getItem('planwikCollapsed') || '{}');
 let idc=1, ridc=1, selDays=[], editId=null, taskMode='manual';
 let loaded=false, isRemote=false, isPro=false, lastReset='', canceled=false, proAccessUntil=0, flowCustomerId=null, flowSubscriptionId=null, householdId=null;
 let curRef=null, curLis=null;
@@ -719,7 +734,14 @@ function render(){
   // matrix
   document.getElementById('matrix').innerHTML=['q1','q2','q3','q4'].map(qid=>{
     const m=QM[qid];
-    return `<div class="quad" style="background:${m.bg};"><p class="qt">${m.title}</p><p class="qs">${m.sub}</p>${qBuild(qid)}</div>`;
+    const collapsed=!!collapsedQuads[qid];
+    return `<div class="quad" style="background:${m.bg};">
+      <div class="qhead" data-qtoggle="${qid}">
+        <div><p class="qt">${m.title}</p><p class="qs">${m.sub}</p></div>
+        <span class="qchevron" style="transform:rotate(${collapsed?'0deg':'180deg'});">▾</span>
+      </div>
+      <div class="qbody" style="${collapsed?'display:none;':''}">${qBuild(qid)}</div>
+    </div>`;
   }).join('');
   // week
   document.getElementById('week').innerHTML=DAYS.map(d=>`<div class="dayc"><p>${d.slice(0,3)}</p><p>${pend.filter(t=>t.day===d).length}</p></div>`).join('');
@@ -833,6 +855,7 @@ function doEditRec(id){
   recurring=recurring.filter(x=>x.id!==id);
   // Load into form
   editId='rec:'+id;
+  scrollToTaskCard();
   document.getElementById('tn').value=r.name;
   document.getElementById('tc').value=r.cat;
   document.getElementById('tu').value=r.urgent?'1':'0';
@@ -848,13 +871,6 @@ function doEditRec(id){
   document.getElementById('ftitle').textContent='✎ Editando recurrente';
   document.getElementById('addbtn').textContent='✓ Guardar cambios';
   document.getElementById('cancelbtn').style.display='inline-flex';
-  const toast=document.getElementById('toast');
-  toast.textContent=`Editando: ${r.name}`; toast.classList.add('show');
-  setTimeout(()=>toast.classList.remove('show'),2500);
-  const card=document.querySelector('.card');
-  window.scrollTo({top:window.pageYOffset+card.getBoundingClientRect().top-16,behavior:'smooth'});
-  card.style.transition='box-shadow .3s'; card.style.boxShadow='0 0 0 2px var(--accent)';
-  setTimeout(()=>{card.style.boxShadow='none';},1200);
   document.getElementById('tn').focus();
   render(); persist();
 }
@@ -863,6 +879,7 @@ function doEdit(id){
   const t=tasks.find(x=>x.id===id); if(!t)return;
   editId=id;
   setMode('manual');
+  scrollToTaskCard();
   document.getElementById('tn').value=t.name;
   document.getElementById('tc').value=t.cat;
   document.getElementById('tu').value=t.urgent?'1':'0';
@@ -873,15 +890,16 @@ function doEdit(id){
   document.getElementById('cancelbtn').style.display='inline-flex';
   const rl=document.getElementById('rlabel');
   rl.style.opacity=t.rid?'0.5':'1'; rl.style.pointerEvents=t.rid?'none':'auto';
-  const toast=document.getElementById('toast');
-  toast.textContent=`Editando: ${t.name}`; toast.classList.add('show');
-  setTimeout(()=>toast.classList.remove('show'),2500);
-  const card=document.querySelector('.card');
+  document.getElementById('tn').focus();
+}
+function scrollToTaskCard(){
+  const card=document.getElementById('task-card');
   window.scrollTo({top:window.pageYOffset+card.getBoundingClientRect().top-16,behavior:'smooth'});
   card.style.transition='box-shadow .3s'; card.style.boxShadow='0 0 0 2px var(--accent)';
   setTimeout(()=>{card.style.boxShadow='none';},1200);
-  document.getElementById('tn').focus();
 }
+document.getElementById('fab-add').addEventListener('click', scrollToTaskCard);
+
 function resetForm(){
   editId=null;
   document.getElementById('tn').value='';
@@ -993,6 +1011,12 @@ document.getElementById('htoggle').addEventListener('click',()=>{
 });
 document.getElementById('hclear').addEventListener('click',()=>{history=[];render();persist();});
 document.getElementById('matrix').addEventListener('click',e=>{
+  const qh=e.target.closest('[data-qtoggle]'); if(qh){
+    const qid=qh.getAttribute('data-qtoggle');
+    collapsedQuads[qid]=!collapsedQuads[qid];
+    localStorage.setItem('planwikCollapsed', JSON.stringify(collapsedQuads));
+    render(); return;
+  }
   const dn=e.target.closest('[data-done]'); if(dn){doComplete(dn.getAttribute('data-done'));return;}
   const dl=e.target.closest('[data-del]'); if(dl){doDelete(dl.getAttribute('data-del'));return;}
   const sd=e.target.closest('[data-subdone]'); if(sd){const[tid,sid]=sd.getAttribute('data-subdone').split('|');doToggleSubtask(tid,sid);return;}
