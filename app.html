@@ -351,10 +351,10 @@ const auth = getAuth(fbApp);
 
 const CAT = { trabajo:'Trabajo', personal:'Personal', proyecto:'Proyecto especial' };
 const CATC = { trabajo:'cat-trabajo', personal:'cat-personal', proyecto:'cat-proyecto' };
-// Tema claro/oscuro — respeta preferencia guardada, o el sistema si no eligió ninguna
+// Tema claro/oscuro — oscuro por defecto, salvo que el usuario elija explícitamente modo claro
 (function(){
   const saved = localStorage.getItem('planwikTheme'); // 'light' | 'dark' | null
-  if(saved) document.documentElement.setAttribute('data-theme', saved);
+  document.documentElement.setAttribute('data-theme', saved || 'dark');
 
   function currentIsDark(){
     const explicit = document.documentElement.getAttribute('data-theme');
