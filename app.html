@@ -198,6 +198,7 @@ html[data-theme="dark"] .cat-proyecto{background:#633806;color:#FAC775;}
   </div>
   <div id="sb"><span id="sd"></span><span id="st">Conectando...</span></div>
   <div id="banner" style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;padding:8px 12px;background:var(--s1);border-radius:var(--r);border:.5px solid var(--border);"></div>
+  <div id="pending-invites" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;"></div>
 
   <button id="fab-add" type="button" title="Agregar tarea">+</button>
 
@@ -339,6 +340,36 @@ html[data-theme="dark"] .cat-proyecto{background:#633806;color:#FAC775;}
   </div>
 </div>
 
+<div id="sharemodal" style="display:none;position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.45);align-items:center;justify-content:center;">
+  <div style="background:var(--s2);border-radius:16px;padding:1.25rem;max-width:400px;width:90%;display:flex;flex-direction:column;gap:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <h3 style="margin:0;font-size:16px;">👥 Compartir tarea</h3>
+      <button id="share-close" type="button" style="width:28px;height:28px;border-radius:50%;background:var(--s1);border:.5px solid var(--border2);color:var(--t1);font-size:14px;padding:0;">✕</button>
+    </div>
+    <p id="share-taskname" style="font-size:13px;color:var(--tm);margin:0;"></p>
+
+    <div>
+      <p style="font-size:12px;color:var(--tm);margin:0 0 6px;">Permiso para la otra persona</p>
+      <div class="chip-row">
+        <button type="button" class="chip active" data-perm="edit" id="share-perm-edit">Ver y editar</button>
+        <button type="button" class="chip" data-perm="view" id="share-perm-view">Solo ver</button>
+      </div>
+    </div>
+
+    <div id="share-email-block" style="display:none;flex-direction:column;gap:6px;">
+      <input id="share-email-input" type="email" placeholder="Correo de la persona">
+      <button id="share-email-send" type="button">Enviar invitación</button>
+    </div>
+
+    <div id="share-actions" style="display:flex;flex-direction:column;gap:8px;">
+      <button id="share-via-email" type="button">📧 Enviar por correo</button>
+      <button id="share-via-whatsapp" type="button">💬 Compartir por WhatsApp</button>
+    </div>
+
+    <p id="share-status" style="font-size:12px;color:var(--tm);margin:0;text-align:center;"></p>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getDatabase, ref, set, update, onValue, off } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
@@ -429,6 +460,123 @@ async function claimPendingInvitesOnLogin(){
     await fetch(CLAIM_INVITES_URL, { method:'POST', headers:{ 'Authorization': `Bearer ${idToken}` } });
   }catch(err){ console.error('No se pudieron reclamar invitaciones pendientes:', err); }
 }
+
+async function handleJoinLink(){
+  const params=new URLSearchParams(window.location.search);
+  const taskId=params.get('join');
+  if(!taskId) return;
+  const perm=params.get('perm')==='view'?'view':'edit';
+  try{
+    const idToken=await auth.currentUser.getIdToken();
+    await fetch(RESPOND_INVITE_URL, {
+      method:'POST',
+      headers:{ 'Authorization':`Bearer ${idToken}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ taskId, permission:perm }) // sin "accept" → solo se registra como pendiente
+    });
+  }catch(err){
+    console.error('No se pudo procesar el link de invitación:', err);
+  }
+  // Limpiamos la URL para que un refresh no reintente el mismo link
+  const url=new URL(window.location);
+  url.searchParams.delete('join');
+  url.searchParams.delete('perm');
+  window.history.replaceState({}, '', url);
+}
+
+// ── Compartir tarea ──
+let sharingTaskId=null, sharingPerm='edit';
+
+function openShareModal(taskId){
+  const t=tasks.find(x=>x.id===taskId); if(!t) return;
+  sharingTaskId=taskId;
+  sharingPerm='edit';
+  document.getElementById('share-taskname').textContent=`"${t.name}"`;
+  document.getElementById('share-perm-edit').classList.add('active');
+  document.getElementById('share-perm-view').classList.remove('active');
+  document.getElementById('share-email-block').style.display='none';
+  document.getElementById('share-actions').style.display='flex';
+  document.getElementById('share-email-input').value='';
+  document.getElementById('share-status').textContent='';
+  document.getElementById('sharemodal').style.display='flex';
+}
+function closeShareModal(){
+  document.getElementById('sharemodal').style.display='none';
+  sharingTaskId=null;
+}
+document.getElementById('share-close').addEventListener('click', closeShareModal);
+document.getElementById('sharemodal').addEventListener('click', e=>{
+  if(e.target.id==='sharemodal') closeShareModal();
+});
+document.getElementById('share-perm-edit').addEventListener('click', ()=>{
+  sharingPerm='edit';
+  document.getElementById('share-perm-edit').classList.add('active');
+  document.getElementById('share-perm-view').classList.remove('active');
+});
+document.getElementById('share-perm-view').addEventListener('click', ()=>{
+  sharingPerm='view';
+  document.getElementById('share-perm-view').classList.add('active');
+  document.getElementById('share-perm-edit').classList.remove('active');
+});
+document.getElementById('share-via-email').addEventListener('click', ()=>{
+  document.getElementById('share-email-block').style.display='flex';
+  document.getElementById('share-actions').style.display='none';
+  document.getElementById('share-email-input').focus();
+});
+
+function taskPayloadFor(taskId){
+  const t=tasks.find(x=>x.id===taskId); if(!t) return null;
+  return { name:t.name, cat:t.cat, urgent:t.urgent, important:t.important, due:t.due||'', subtasks:t.subtasks||[] };
+}
+
+document.getElementById('share-email-send').addEventListener('click', async ()=>{
+  const email=(document.getElementById('share-email-input').value||'').trim();
+  if(!email){ alert('Ingresa un correo.'); return; }
+  const task=taskPayloadFor(sharingTaskId); if(!task) return;
+  const btn=document.getElementById('share-email-send');
+  btn.disabled=true; btn.textContent='Enviando...';
+  document.getElementById('share-status').textContent='';
+  try{
+    const idToken=await auth.currentUser.getIdToken();
+    const res=await fetch(SHARE_TASK_URL, {
+      method:'POST',
+      headers:{ 'Authorization':`Bearer ${idToken}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ task, channel:'email', permission:sharingPerm, recipientEmail:email })
+    });
+    const data=await res.json();
+    if(!res.ok || data.error) throw new Error(data.error||'No se pudo compartir');
+    document.getElementById('share-status').textContent=`✅ Invitación enviada a ${email}`;
+    setTimeout(closeShareModal, 1800);
+  }catch(err){
+    console.error(err);
+    document.getElementById('share-status').textContent='❌ No se pudo enviar. Intenta de nuevo.';
+  }finally{
+    btn.disabled=false; btn.textContent='Enviar invitación';
+  }
+});
+
+document.getElementById('share-via-whatsapp').addEventListener('click', async ()=>{
+  const task=taskPayloadFor(sharingTaskId); if(!task) return;
+  const btn=document.getElementById('share-via-whatsapp');
+  btn.disabled=true; btn.textContent='Generando link...';
+  try{
+    const idToken=await auth.currentUser.getIdToken();
+    const res=await fetch(SHARE_TASK_URL, {
+      method:'POST',
+      headers:{ 'Authorization':`Bearer ${idToken}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ task, channel:'whatsapp', permission:sharingPerm })
+    });
+    const data=await res.json();
+    if(!res.ok || data.error || !data.joinLink) throw new Error(data.error||'No se pudo generar el link');
+    const msg=encodeURIComponent(`Te compartí la tarea "${task.name}" en Planwik: ${data.joinLink}`);
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+    closeShareModal();
+  }catch(err){
+    console.error(err);
+    document.getElementById('share-status').textContent='❌ No se pudo generar el link. Intenta de nuevo.';
+  }finally{
+    btn.disabled=false; btn.textContent='💬 Compartir por WhatsApp';
+  }
+});
 
 async function cancelSubscription(btnEl){
   const confirmed = window.confirm('¿Seguro que quieres cancelar tu suscripción Pro? No se te cobrará de nuevo, y mantienes el acceso Pro por 30 días más desde hoy.');
@@ -585,6 +733,7 @@ function tCard(t){
       <span data-draghandle="task:${t.id}" style="cursor:grab;touch-action:none;user-select:none;color:var(--tm);font-size:14px;padding:0 2px;flex-shrink:0;">⠿</span>
       <p style="font-size:13px;font-weight:500;margin:0;flex:1;min-width:0;color:var(--t1);">${t.name}</p>
       <div style="display:flex;gap:4px;flex-shrink:0;">
+        <button class="ib" data-share="${t.id}" type="button" title="Compartir">👥</button>
         <button class="ib" data-edit="${t.id}" type="button">✎</button>
         <button class="ib" data-done="${t.id}" type="button">✓</button>
         <button class="ib" data-del="${t.id}" type="button">🗑</button>
@@ -664,7 +813,9 @@ function qBuild(qid){
 
   const sharedIds=Object.keys(sharedTasks).filter(id=>{
     const s=sharedTasks[id];
-    return s&&s.data&&!s.data.completed&&Q(s.data)===qid;
+    const myUid=auth.currentUser?.uid;
+    const me=s&&s.members&&myUid?s.members[myUid]:null;
+    return s&&s.data&&s.members&&me&&me.status==='accepted'&&!s.data.completed&&Q(s.data)===qid;
   });
   if(sharedIds.length){
     html += `<p style="font-size:11px;font-weight:600;color:#8b5cf6;margin:10px 0 6px;">👥 Compartidas</p>`;
@@ -795,8 +946,54 @@ async function doJoinHousehold(){
   }
 }
 
+function renderPendingInvites(){
+  const el=document.getElementById('pending-invites'); if(!el) return;
+  const myUid=auth.currentUser?.uid;
+  const pendingIds=Object.keys(sharedTasks).filter(id=>{
+    const s=sharedTasks[id];
+    const me=s&&s.members&&myUid?s.members[myUid]:null;
+    return s&&s.data&&s.meta&&me&&me.status==='pending';
+  });
+  if(!pendingIds.length){ el.innerHTML=''; return; }
+  el.innerHTML=pendingIds.map(id=>{
+    const s=sharedTasks[id];
+    return `<div style="background:var(--s2);border:1px solid #8b5cf6;border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;">
+      <p style="font-size:13px;margin:0;color:var(--t1);"><strong>${s.meta.ownerEmail||'Alguien'}</strong> te compartió una tarea:</p>
+      <p style="font-size:14px;font-weight:600;margin:0;color:var(--t1);">"${s.data.name}"</p>
+      <div style="display:flex;gap:8px;">
+        <button data-invite-accept="${id}" type="button" style="flex:1;background:#8b5cf6;color:#fff;border:none;font-weight:500;">Aceptar</button>
+        <button data-invite-reject="${id}" type="button" style="flex:1;">Rechazar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+document.getElementById('pending-invites').addEventListener('click', async e=>{
+  const acc=e.target.closest('[data-invite-accept]');
+  const rej=e.target.closest('[data-invite-reject]');
+  const taskId=acc?acc.getAttribute('data-invite-accept'):(rej?rej.getAttribute('data-invite-reject'):null);
+  if(!taskId) return;
+  const accept=!!acc;
+  const btn=acc||rej;
+  btn.disabled=true; btn.textContent='...';
+  try{
+    const idToken=await auth.currentUser.getIdToken();
+    await fetch(RESPOND_INVITE_URL, {
+      method:'POST',
+      headers:{ 'Authorization':`Bearer ${idToken}`, 'Content-Type':'application/json' },
+      body: JSON.stringify({ taskId, accept })
+    });
+    if(!accept) stopWatchingSharedTask(taskId);
+    render();
+  }catch(err){
+    console.error(err);
+    alert('No se pudo procesar la invitación. Intenta de nuevo.');
+    btn.disabled=false; btn.textContent=accept?'Aceptar':'Rechazar';
+  }
+});
+
 function render(){
   if(!loaded)return;
+  renderPendingInvites();
   const pend=tasks.filter(t=>!t.completed);
   // banner
   const ban=document.getElementById('banner');
@@ -1111,6 +1308,7 @@ document.getElementById('matrix').addEventListener('click',e=>{
   }
   const dn=e.target.closest('[data-done]'); if(dn){doComplete(dn.getAttribute('data-done'));return;}
   const shd=e.target.closest('[data-shareddone]'); if(shd){doToggleSharedTask(shd.getAttribute('data-shareddone'));return;}
+  const shb=e.target.closest('[data-share]'); if(shb){openShareModal(shb.getAttribute('data-share'));return;}
   const dl=e.target.closest('[data-del]'); if(dl){doDelete(dl.getAttribute('data-del'));return;}
   const sd=e.target.closest('[data-subdone]'); if(sd){const[tid,sid]=sd.getAttribute('data-subdone').split('|');doToggleSubtask(tid,sid);return;}
   const sdl=e.target.closest('[data-subdel]'); if(sdl){const[tid,sid]=sdl.getAttribute('data-subdel').split('|');doDeleteSubtask(tid,sid);return;}
@@ -1289,6 +1487,7 @@ onAuthStateChanged(auth,user=>{
         if(!sharedIdsRef){
           watchSharedTasks(user.uid);
           claimPendingInvitesOnLogin();
+          handleJoinLink();
         }
 
         // Si canceló la suscripción y ya pasó el período de gracia (30 días regalados), se desactiva el Pro
