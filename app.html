@@ -419,6 +419,16 @@ window.upgradeToPro = upgradeToPro;
 const CANCEL_SUBSCRIPTION_URL = 'https://cancel-flow-subscription-958800466783.southamerica-west1.run.app';
 const CREATE_HOUSEHOLD_URL = 'https://create-household-958800466783.southamerica-west1.run.app';
 const JOIN_HOUSEHOLD_URL = 'https://join-household-958800466783.southamerica-west1.run.app';
+const SHARE_TASK_URL = 'https://share-task-958800466783.southamerica-west1.run.app';
+const RESPOND_INVITE_URL = 'https://respond-to-invite-958800466783.southamerica-west1.run.app';
+const CLAIM_INVITES_URL = 'https://claim-pending-invites-958800466783.southamerica-west1.run.app';
+
+async function claimPendingInvitesOnLogin(){
+  try{
+    const idToken = await auth.currentUser.getIdToken();
+    await fetch(CLAIM_INVITES_URL, { method:'POST', headers:{ 'Authorization': `Bearer ${idToken}` } });
+  }catch(err){ console.error('No se pudieron reclamar invitaciones pendientes:', err); }
+}
 
 async function cancelSubscription(btnEl){
   const confirmed = window.confirm('¿Seguro que quieres cancelar tu suscripción Pro? No se te cobrará de nuevo, y mantienes el acceso Pro por 30 días más desde hoy.');
@@ -458,12 +468,50 @@ const QM = {
 };
 
 let tasks=[], history=[], recurring=[], weeklyStats=[];
+let sharedTasks={}; // {taskId: {data:{...}, members:{...}}}
+let sharedListeners={}; // {taskId: {dataRef,dataLis,membersRef,membersLis}}
+let sharedIdsRef=null, sharedIdsLis=null;
 let collapsedQuads = JSON.parse(localStorage.getItem('planwikCollapsed') || '{}');
 let idc=1, ridc=1, selDays=[], editId=null, taskMode='manual';
 let loaded=false, isRemote=false, isPro=false, lastReset='', canceled=false, proAccessUntil=0, flowCustomerId=null, flowSubscriptionId=null, householdId=null;
 let curRef=null, curLis=null;
 
 function Q(t){ return t.urgent&&t.important?'q1':!t.urgent&&t.important?'q2':t.urgent&&!t.important?'q3':'q4'; }
+
+function doToggleSharedTask(taskId){
+  const s=sharedTasks[taskId]; if(!s||!s.data||!s.members) return;
+  const me=s.members[auth.currentUser?.uid];
+  if(!me||me.permission!=='edit'||me.status!=='accepted') return; // solo lectura para este usuario
+  update(ref(db, `sharedTasks/${taskId}/data`), { completed: !s.data.completed });
+}
+
+function initialsOf(str){
+  if(!str) return '?';
+  return str.trim()[0].toUpperCase();
+}
+function sharedTCard(taskId){
+  const s=sharedTasks[taskId]; if(!s||!s.data||!s.members||!s.meta) return '';
+  const d=s.data, members=s.members, meta=s.meta;
+  const me=members[auth.currentUser?.uid];
+  const canEdit=me && me.permission==='edit' && me.status==='accepted';
+  const avatars=Object.entries(members).map(([uid,m])=>{
+    const label = uid===meta.owner ? initialsOf(meta.ownerEmail) : (m.email?initialsOf(m.email):'👤');
+    const pending = m.status!=='accepted';
+    return `<span title="${pending?'Invitación pendiente':''}" style="width:22px;height:22px;border-radius:50%;background:${pending?'var(--s1)':'var(--accent)'};color:${pending?'var(--tm)':'#fff'};border:2px solid var(--s2);font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-left:-6px;flex-shrink:0;">${label}</span>`;
+  }).join('');
+  return `<div data-sharedrow="${taskId}" style="background:var(--s2);border:.5px solid var(--border);border-left:3px solid #8b5cf6;border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:4px;margin-bottom:6px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+      <button data-shareddone="${taskId}" type="button" ${canEdit?'':'disabled'} style="width:18px;height:18px;border-radius:4px;border:1.5px solid ${d.completed?'#8b5cf6':'var(--border2)'};background:${d.completed?'#8b5cf6':'var(--s1)'};cursor:${canEdit?'pointer':'default'};flex-shrink:0;padding:0;font-size:11px;color:#fff;display:flex;align-items:center;justify-content:center;opacity:${canEdit?'1':'.5'};">${d.completed?'✓':''}</button>
+      <p style="font-size:13px;font-weight:500;margin:0;flex:1;min-width:0;color:var(--t1);${d.completed?'text-decoration:line-through;opacity:.6;':''}">${d.name}</p>
+      <div style="display:flex;flex-shrink:0;padding-left:6px;">${avatars}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span class="${CATC[d.cat]}" style="font-size:11px;padding:2px 8px;border-radius:var(--r);font-weight:500;">${CAT[d.cat]}</span>
+      ${d.due?`<span style="font-size:11px;color:var(--tm);">${fd(d.due)}</span>`:''}
+      <span style="font-size:10px;color:#8b5cf6;font-weight:600;">👥 Compartida</span>
+    </div>
+  </div>`;
+}
 function hu(d){ return d?(new Date(d+'T23:59:59')-new Date())/36e5:null; }
 function fd(d){ return d?new Date(d+'T00:00:00').toLocaleDateString('es-CL',{day:'2-digit',month:'short'}):''; }
 function wk(){
@@ -611,11 +659,55 @@ function qBuild(qid){
     });
     items=[...sortedTasks.map(t=>({type:'task',obj:t})),...recDefs.map(r=>({type:'rec',obj:r}))];
   }
-  if(!items.length)return'<p style="font-size:12px;color:var(--tm);margin:0;">Sin tareas</p>';
-  return items.map(x=>x.type==='task'?tCard(x.obj):rCard(x.obj,tasks.filter(t=>t.rid===x.obj.id))).join('');
+  if(!items.length && !Object.keys(sharedTasks).length)return'<p style="font-size:12px;color:var(--tm);margin:0;">Sin tareas</p>';
+  let html=items.map(x=>x.type==='task'?tCard(x.obj):rCard(x.obj,tasks.filter(t=>t.rid===x.obj.id))).join('');
+
+  const sharedIds=Object.keys(sharedTasks).filter(id=>{
+    const s=sharedTasks[id];
+    return s&&s.data&&!s.data.completed&&Q(s.data)===qid;
+  });
+  if(sharedIds.length){
+    html += `<p style="font-size:11px;font-weight:600;color:#8b5cf6;margin:10px 0 6px;">👥 Compartidas</p>`;
+    html += sharedIds.map(id=>sharedTCard(id)).join('');
+  }
+  return html;
 }
 
 let hhRef=null, hhLis=null, householdData=null;
+
+function watchSharedTasks(uid){
+  if(sharedIdsRef&&sharedIdsLis){ off(sharedIdsRef,'value',sharedIdsLis); sharedIdsRef=null; sharedIdsLis=null; }
+  Object.keys(sharedListeners).forEach(stopWatchingSharedTask);
+  sharedTasks={};
+  if(!uid) return;
+  sharedIdsRef=ref(db, `users/${uid}/agenda/sharedTaskIds`);
+  sharedIdsLis=onValue(sharedIdsRef, snap=>{
+    const ids=Object.keys(snap.val()||{});
+    // Deja de escuchar las que ya no están en la lista
+    Object.keys(sharedListeners).forEach(id=>{ if(!ids.includes(id)) stopWatchingSharedTask(id); });
+    // Empieza a escuchar las nuevas
+    ids.forEach(id=>{ if(!sharedListeners[id]) startWatchingSharedTask(id); });
+  });
+}
+function startWatchingSharedTask(taskId){
+  const dataRef=ref(db, `sharedTasks/${taskId}/data`);
+  const membersRef=ref(db, `sharedTasks/${taskId}/members`);
+  const metaRef=ref(db, `sharedTasks/${taskId}/meta`);
+  sharedTasks[taskId]={data:null,members:null,meta:null};
+  const dataLis=onValue(dataRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].data=s.val(); render();} });
+  const membersLis=onValue(membersRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].members=s.val(); render();} });
+  const metaLis=onValue(metaRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].meta=s.val(); render();} });
+  sharedListeners[taskId]={dataRef,dataLis,membersRef,membersLis,metaRef,metaLis};
+}
+function stopWatchingSharedTask(taskId){
+  const l=sharedListeners[taskId]; if(!l)return;
+  off(l.dataRef,'value',l.dataLis);
+  off(l.membersRef,'value',l.membersLis);
+  off(l.metaRef,'value',l.metaLis);
+  delete sharedListeners[taskId];
+  delete sharedTasks[taskId];
+}
+
 function watchHousehold(){
   if(hhRef&&hhLis){ off(hhRef,'value',hhLis); hhRef=null; hhLis=null; }
   householdData=null;
@@ -1018,6 +1110,7 @@ document.getElementById('matrix').addEventListener('click',e=>{
     render(); return;
   }
   const dn=e.target.closest('[data-done]'); if(dn){doComplete(dn.getAttribute('data-done'));return;}
+  const shd=e.target.closest('[data-shareddone]'); if(shd){doToggleSharedTask(shd.getAttribute('data-shareddone'));return;}
   const dl=e.target.closest('[data-del]'); if(dl){doDelete(dl.getAttribute('data-del'));return;}
   const sd=e.target.closest('[data-subdone]'); if(sd){const[tid,sid]=sd.getAttribute('data-subdone').split('|');doToggleSubtask(tid,sid);return;}
   const sdl=e.target.closest('[data-subdel]'); if(sdl){const[tid,sid]=sdl.getAttribute('data-subdel').split('|');doDeleteSubtask(tid,sid);return;}
@@ -1192,6 +1285,10 @@ onAuthStateChanged(auth,user=>{
         if(data.householdId !== householdId){
           householdId=data.householdId||null;
           watchHousehold();
+        }
+        if(!sharedIdsRef){
+          watchSharedTasks(user.uid);
+          claimPendingInvitesOnLogin();
         }
 
         // Si canceló la suscripción y ya pasó el período de gracia (30 días regalados), se desactiva el Pro
