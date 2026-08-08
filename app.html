@@ -897,16 +897,17 @@ function watchSharedTasks(uid){
     Object.keys(sharedListeners).forEach(id=>{ if(!ids.includes(id)) stopWatchingSharedTask(id); });
     // Empieza a escuchar las nuevas
     ids.forEach(id=>{ if(!sharedListeners[id]) startWatchingSharedTask(id); });
-  });
+  }, err=>console.error('Error leyendo sharedTaskIds:', err.message));
 }
 function startWatchingSharedTask(taskId){
   const dataRef=ref(db, `sharedTasks/${taskId}/data`);
   const membersRef=ref(db, `sharedTasks/${taskId}/members`);
   const metaRef=ref(db, `sharedTasks/${taskId}/meta`);
   sharedTasks[taskId]={data:null,members:null,meta:null};
-  const dataLis=onValue(dataRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].data=s.val(); render();} });
-  const membersLis=onValue(membersRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].members=s.val(); render();} });
-  const metaLis=onValue(metaRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].meta=s.val(); render();} });
+  const errHandler=(label)=>(err)=>console.error(`Error leyendo ${label} de sharedTasks/${taskId}:`, err.message);
+  const dataLis=onValue(dataRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].data=s.val(); render();} }, errHandler('data'));
+  const membersLis=onValue(membersRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].members=s.val(); render();} }, errHandler('members'));
+  const metaLis=onValue(metaRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].meta=s.val(); render();} }, errHandler('meta'));
   sharedListeners[taskId]={dataRef,dataLis,membersRef,membersLis,metaRef,metaLis};
 }
 function stopWatchingSharedTask(taskId){
