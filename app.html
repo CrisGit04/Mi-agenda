@@ -453,6 +453,7 @@ const JOIN_HOUSEHOLD_URL = 'https://join-household-958800466783.southamerica-wes
 const SHARE_TASK_URL = 'https://share-task-958800466783.southamerica-west1.run.app';
 const RESPOND_INVITE_URL = 'https://respond-to-invite-958800466783.southamerica-west1.run.app';
 const CLAIM_INVITES_URL = 'https://claim-pending-invites-958800466783.southamerica-west1.run.app';
+const DELETE_SHARED_TASK_URL = 'https://delete-shared-task-958800466783.southamerica-west1.run.app';
 
 async function claimPendingInvitesOnLogin(){
   try{
@@ -484,11 +485,12 @@ async function handleJoinLink(){
 }
 
 // ── Compartir tarea ──
-let sharingTaskId=null, sharingPerm='edit';
+let sharingCtx=null; // {type:'task', taskId} | {type:'subtask', parentTaskId, subId}
+let sharingPerm='edit';
 
 function openShareModal(taskId){
   const t=tasks.find(x=>x.id===taskId); if(!t) return;
-  sharingTaskId=taskId;
+  sharingCtx={type:'task', taskId};
   sharingPerm='edit';
   document.getElementById('share-taskname').textContent=`"${t.name}"`;
   document.getElementById('share-perm-edit').classList.add('active');
@@ -499,9 +501,23 @@ function openShareModal(taskId){
   document.getElementById('share-status').textContent='';
   document.getElementById('sharemodal').style.display='flex';
 }
+function openShareSubtaskModal(parentTaskId, subId){
+  const t=tasks.find(x=>x.id===parentTaskId); if(!t||!t.subtasks) return;
+  const s=t.subtasks.find(x=>x.id===subId); if(!s) return;
+  sharingCtx={type:'subtask', parentTaskId, subId};
+  sharingPerm='edit';
+  document.getElementById('share-taskname').textContent=`"${s.name}"`;
+  document.getElementById('share-perm-edit').classList.add('active');
+  document.getElementById('share-perm-view').classList.remove('active');
+  document.getElementById('share-email-block').style.display='none';
+  document.getElementById('share-actions').style.display='flex';
+  document.getElementById('share-email-input').value='';
+  document.getElementById('share-status').textContent='';
+  document.getElementById('sharemodal').style.display='flex';
+}
 function closeShareModal(){
   document.getElementById('sharemodal').style.display='none';
-  sharingTaskId=null;
+  sharingCtx=null;
 }
 document.getElementById('share-close').addEventListener('click', closeShareModal);
 document.getElementById('sharemodal').addEventListener('click', e=>{
@@ -523,15 +539,38 @@ document.getElementById('share-via-email').addEventListener('click', ()=>{
   document.getElementById('share-email-input').focus();
 });
 
-function taskPayloadFor(taskId){
-  const t=tasks.find(x=>x.id===taskId); if(!t) return null;
-  return { name:t.name, cat:t.cat, urgent:t.urgent, important:t.important, due:t.due||'', subtasks:t.subtasks||[] };
+// Arma el payload a compartir según el contexto (tarea normal, instancia recurrente, o subtarea)
+function sharePayloadForCtx(){
+  if(!sharingCtx) return null;
+  if(sharingCtx.type==='task'){
+    const t=tasks.find(x=>x.id===sharingCtx.taskId); if(!t) return null;
+    return { name:t.name, cat:t.cat, urgent:t.urgent, important:t.important, due:t.due||'', subtasks:t.subtasks||[] };
+  }
+  if(sharingCtx.type==='subtask'){
+    const t=tasks.find(x=>x.id===sharingCtx.parentTaskId); if(!t||!t.subtasks) return null;
+    const s=t.subtasks.find(x=>x.id===sharingCtx.subId); if(!s) return null;
+    return { name:s.name, cat:t.cat, urgent:t.urgent, important:t.important, due:s.due||'', subtasks:[], parentName:t.name };
+  }
+  return null;
+}
+// Una vez compartido con éxito, se retira de la lista personal — pasa a vivir solo en el espacio compartido
+function removeLocalAfterShare(){
+  if(!sharingCtx) return;
+  if(sharingCtx.type==='task'){
+    const t=tasks.find(x=>x.id===sharingCtx.taskId);
+    if(t&&t.rid){ sharedRecMarkers.push({rid:t.rid, day:t.day, cw:wk()}); }
+    tasks=tasks.filter(t=>t.id!==sharingCtx.taskId);
+  } else if(sharingCtx.type==='subtask'){
+    const t=tasks.find(x=>x.id===sharingCtx.parentTaskId);
+    if(t&&t.subtasks) t.subtasks=t.subtasks.filter(s=>s.id!==sharingCtx.subId);
+  }
+  render(); persist();
 }
 
 document.getElementById('share-email-send').addEventListener('click', async ()=>{
   const email=(document.getElementById('share-email-input').value||'').trim();
   if(!email){ alert('Ingresa un correo.'); return; }
-  const task=taskPayloadFor(sharingTaskId); if(!task) return;
+  const task=sharePayloadForCtx(); if(!task) return;
   const btn=document.getElementById('share-email-send');
   btn.disabled=true; btn.textContent='Enviando...';
   document.getElementById('share-status').textContent='';
@@ -545,6 +584,7 @@ document.getElementById('share-email-send').addEventListener('click', async ()=>
     const data=await res.json();
     if(!res.ok || data.error) throw new Error(data.error||'No se pudo compartir');
     document.getElementById('share-status').textContent=`✅ Invitación enviada a ${email}`;
+    removeLocalAfterShare();
     setTimeout(closeShareModal, 1800);
   }catch(err){
     console.error(err);
@@ -555,7 +595,7 @@ document.getElementById('share-email-send').addEventListener('click', async ()=>
 });
 
 document.getElementById('share-via-whatsapp').addEventListener('click', async ()=>{
-  const task=taskPayloadFor(sharingTaskId); if(!task) return;
+  const task=sharePayloadForCtx(); if(!task) return;
   const btn=document.getElementById('share-via-whatsapp');
   btn.disabled=true; btn.textContent='Generando link...';
   try{
@@ -567,8 +607,9 @@ document.getElementById('share-via-whatsapp').addEventListener('click', async ()
     });
     const data=await res.json();
     if(!res.ok || data.error || !data.joinLink) throw new Error(data.error||'No se pudo generar el link');
-    const msg=encodeURIComponent(`Te compartí la tarea "${task.name}" en Planwik: ${data.joinLink}`);
+    const msg=encodeURIComponent(`Te compartí "${task.name}" en Planwik: ${data.joinLink}`);
     window.open(`https://wa.me/?text=${msg}`, '_blank');
+    removeLocalAfterShare();
     closeShareModal();
   }catch(err){
     console.error(err);
@@ -620,6 +661,7 @@ let sharedTasks={}; // {taskId: {data:{...}, members:{...}}}
 let sharedListeners={}; // {taskId: {dataRef,dataLis,membersRef,membersLis}}
 let sharedIdsRef=null, sharedIdsLis=null;
 let collapsedQuads = JSON.parse(localStorage.getItem('planwikCollapsed') || '{}');
+let sharedRecMarkers=[]; // [{rid,day,cw}] — evita que ensureRec() recree una instancia ya compartida esta semana
 let idc=1, ridc=1, selDays=[], editId=null, taskMode='manual';
 let loaded=false, isRemote=false, isPro=false, lastReset='', canceled=false, proAccessUntil=0, flowCustomerId=null, flowSubscriptionId=null, householdId=null;
 let curRef=null, curLis=null;
@@ -630,7 +672,11 @@ function doToggleSharedTask(taskId){
   const s=sharedTasks[taskId]; if(!s||!s.data||!s.members) return;
   const me=s.members[auth.currentUser?.uid];
   if(!me||me.permission!=='edit'||me.status!=='accepted') return; // solo lectura para este usuario
-  update(ref(db, `sharedTasks/${taskId}/data`), { completed: !s.data.completed });
+  const nowCompleted=!s.data.completed;
+  update(ref(db, `sharedTasks/${taskId}/data`), {
+    completed: nowCompleted,
+    completedWeek: nowCompleted ? wk() : null
+  });
 }
 
 function initialsOf(str){
@@ -653,6 +699,7 @@ function sharedTCard(taskId){
       <p style="font-size:13px;font-weight:500;margin:0;flex:1;min-width:0;color:var(--t1);${d.completed?'text-decoration:line-through;opacity:.6;':''}">${d.name}</p>
       <div style="display:flex;flex-shrink:0;padding-left:6px;">${avatars}</div>
     </div>
+    ${d.parentName?`<p style="font-size:11px;color:var(--tm);margin:0;">↳ Parte de: ${d.parentName}</p>`:''}
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
       <span class="${CATC[d.cat]}" style="font-size:11px;padding:2px 8px;border-radius:var(--r);font-weight:500;">${CAT[d.cat]}</span>
       ${d.due?`<span style="font-size:11px;color:var(--tm);">${fd(d.due)}</span>`:''}
@@ -668,7 +715,7 @@ function wk(){
   const y=m.getFullYear(), s=new Date(y,0,1);
   return `${y}-W${Math.ceil(((m-s)/86400000+s.getDay()+1)/7)}`;
 }
-function persist(){ if(isRemote||!curRef)return; update(curRef,{tasks,history,recurring,idc,ridc,lastReset,isPro,weeklyStats,canceled,proAccessUntil,flowCustomerId,flowSubscriptionId}); }
+function persist(){ if(isRemote||!curRef)return; update(curRef,{tasks,history,recurring,idc,ridc,lastReset,isPro,weeklyStats,canceled,proAccessUntil,flowCustomerId,flowSubscriptionId,sharedRecMarkers}); }
 
 // Captura estadísticas de la semana que termina, justo antes del reset semanal.
 // Se guarda solo la data cruda (sin costo de IA); el texto del análisis se genera
@@ -689,6 +736,15 @@ function captureWeeklyStats(){
       if(s.due && s.due >= todayStr) return;
       byQ[Q(t)].pend++;
     });
+  });
+  // Tareas compartidas (aceptadas) — cuentan igual que las personales, ya que son compromisos de ambos
+  const myUid=auth.currentUser?.uid;
+  Object.values(sharedTasks).forEach(s=>{
+    if(!s||!s.data||!s.members||!myUid) return;
+    const me=s.members[myUid];
+    if(!me||me.status!=='accepted') return;
+    if(s.data.completed && s.data.completedWeek===lastReset) byQ[Q(s.data)].done++;
+    else if(!s.data.completed) byQ[Q(s.data)].pend++;
   });
   const totalDone = byQ.q1.done+byQ.q2.done+byQ.q3.done+byQ.q4.done;
   const totalPend = byQ.q1.pend+byQ.q2.pend+byQ.q3.pend+byQ.q4.pend;
@@ -711,6 +767,7 @@ function ensureRec(){
     if(tasks.some(t=>t.rid===r.id&&t.day===d&&!t.completed))return;
     if(tasks.some(t=>t.rid===r.id&&t.day===d&&t.completed))return;
     if(history.some(t=>t.rid===r.id&&t.day===d&&t.cw===cw))return;
+    if(sharedRecMarkers.some(m=>m.rid===r.id&&m.day===d&&m.cw===cw))return;
     tasks.push({id:'t'+(idc++),name:r.name,cat:r.cat,urgent:r.urgent,important:r.important,day:d,due:'',completed:false,rid:r.id});
   });});
 }
@@ -755,6 +812,8 @@ function tCard(t){
           <input data-subdue="${t.id}|${s.id}" type="date" value="${s.due||''}" style="position:absolute;inset:0;width:100%;height:100%;border:none;background:transparent;font-size:11px;padding:0;cursor:pointer;${s.due?(sal?'color:var(--danger);font-weight:600;':'color:var(--tm);'):'color:transparent;'}">
           ${!s.due?`<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:13px;opacity:.55;">📅</span>`:''}
         </div>
+        <button data-subshare="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;" title="Compartir">👥</button>
+        <button data-subshare="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;" title="Compartir esta subtarea">👥</button>
         <button data-subedit="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✎</button>
         <button data-subdel="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✕</button>
       </div>`;
@@ -784,7 +843,8 @@ function rCard(r, insts){
     <div style="border-top:.5px solid var(--border);padding-top:6px;">
       ${pend.map(t=>`<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:.5px solid var(--border);">
         <button data-done="${t.id}" type="button" style="width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border2);background:var(--s1);cursor:pointer;flex-shrink:0;padding:0;font-size:10px;color:transparent;display:flex;align-items:center;justify-content:center;">✓</button>
-        <span style="font-size:12px;color:var(--t1);">${t.day}</span>
+        <span style="font-size:12px;color:var(--t1);flex:1;">${t.day}</span>
+        <button data-share="${t.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;" title="Compartir esta instancia">👥</button>
       </div>`).join('')}
     </div>
   </div>`;
@@ -1309,6 +1369,7 @@ document.getElementById('matrix').addEventListener('click',e=>{
   const dn=e.target.closest('[data-done]'); if(dn){doComplete(dn.getAttribute('data-done'));return;}
   const shd=e.target.closest('[data-shareddone]'); if(shd){doToggleSharedTask(shd.getAttribute('data-shareddone'));return;}
   const shb=e.target.closest('[data-share]'); if(shb){openShareModal(shb.getAttribute('data-share'));return;}
+  const shsb=e.target.closest('[data-subshare]'); if(shsb){const[tid,sid]=shsb.getAttribute('data-subshare').split('|');openShareSubtaskModal(tid,sid);return;}
   const dl=e.target.closest('[data-del]'); if(dl){doDelete(dl.getAttribute('data-del'));return;}
   const sd=e.target.closest('[data-subdone]'); if(sd){const[tid,sid]=sd.getAttribute('data-subdone').split('|');doToggleSubtask(tid,sid);return;}
   const sdl=e.target.closest('[data-subdel]'); if(sdl){const[tid,sid]=sdl.getAttribute('data-subdel').split('|');doDeleteSubtask(tid,sid);return;}
@@ -1480,6 +1541,7 @@ onAuthStateChanged(auth,user=>{
         proAccessUntil=data.proAccessUntil||0;
         flowCustomerId=data.flowCustomerId||null;
         flowSubscriptionId=data.flowSubscriptionId||null;
+        sharedRecMarkers=data.sharedRecMarkers||[];
         if(data.householdId !== householdId){
           householdId=data.householdId||null;
           watchHousehold();
@@ -1505,7 +1567,14 @@ tasks = tasks.filter(t => {
   seen.add(key); return true;
 });
 loaded=true; sd.classList.add('on'); st.textContent='Sincronizado';
-weekReset(); render(); isRemote=false;
+if(lastReset && lastReset!==wk()){
+  // Cambio de semana real: esperamos un momento breve a que las tareas compartidas
+  // terminen de cargar, para no subcontarlas en el reporte semanal.
+  render(); isRemote=false;
+  setTimeout(()=>{ weekReset(); render(); persist(); }, 1200);
+} else {
+  weekReset(); render(); isRemote=false;
+}
     },()=>{st.textContent='Error de conexión';});
     setInterval(()=>{if(!loaded)return;if(lastReset!==wk()){weekReset();render();persist();}},60000);
   } else {
