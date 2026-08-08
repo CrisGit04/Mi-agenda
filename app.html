@@ -553,7 +553,7 @@ function sharePayloadForCtx(){
   if(sharingCtx.type==='subtask'){
     const t=tasks.find(x=>x.id===sharingCtx.parentTaskId); if(!t||!t.subtasks) return null;
     const s=t.subtasks.find(x=>x.id===sharingCtx.subId); if(!s) return null;
-    return { name:s.name, cat:t.cat, urgent:t.urgent, important:t.important, due:s.due||'', subtasks:[], parentName:t.name };
+    return { name:s.name, cat:t.cat, urgent:t.urgent, important:t.important, due:s.due||'', subtasks:[], parentName:t.name, parentTaskId:t.id };
   }
   return null;
 }
@@ -789,6 +789,11 @@ function tCard(t){
     if(!a.due&&!b.due)return 0; if(!a.due)return 1; if(!b.due)return -1;
     return new Date(a.due)-new Date(b.due);
   });
+  const myUid=auth.currentUser?.uid;
+  const linkedShared=Object.entries(sharedTasks).filter(([id,s])=>{
+    const me=s&&s.members&&myUid?s.members[myUid]:null;
+    return s&&s.data&&s.data.parentTaskId===t.id&&!s.data.completed&&me&&me.status==='accepted';
+  });
   return `<div data-orow="task:${t.id}" style="background:var(--s2);border:.5px solid ${al?'var(--bord)':'var(--border)'};border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:4px;margin-bottom:6px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
       <span data-draghandle="task:${t.id}" style="cursor:grab;touch-action:none;user-select:none;color:var(--tm);font-size:14px;padding:0 2px;flex-shrink:0;">⠿</span>
@@ -805,7 +810,7 @@ function tCard(t){
       ${t.due?`<span style="font-size:11px;${al?'color:var(--danger);font-weight:500;':'color:var(--tm);'}">${al?'⚠ ':''}${fd(t.due)}</span>`:''}
       ${subs.length?`<span style="font-size:11px;color:var(--tm);">☑ ${subDone}/${subs.length} subtareas</span>`:''}
     </div>
-    ${visibleSubs.length?`<div style="border-top:.5px solid var(--border);margin-top:2px;padding-top:6px;display:flex;flex-direction:column;gap:5px;">
+    ${(visibleSubs.length||linkedShared.length)?`<div style="border-top:.5px solid var(--border);margin-top:2px;padding-top:6px;display:flex;flex-direction:column;gap:5px;">
       ${visibleSubs.map(s=>{
         const sh=hu(s.due), sal=sh!==null&&sh<=24&&!s.done;
         return `<div data-subrow="${t.id}|${s.id}" style="display:flex;align-items:center;gap:6px;">
@@ -819,6 +824,21 @@ function tCard(t){
         <button data-subshare="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;" title="Compartir esta subtarea">👥</button>
         <button data-subedit="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✎</button>
         <button data-subdel="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✕</button>
+      </div>`;
+      }).join('')}
+      ${linkedShared.map(([id,s])=>{
+        const d=s.data, members=s.members||{}, meta=s.meta||{};
+        const me=members[myUid];
+        const canEdit=me&&me.permission==='edit'&&me.status==='accepted';
+        const avatars=Object.entries(members).map(([uid,m])=>{
+          const label = uid===meta.owner ? initialsOf(meta.ownerEmail) : (m.email?initialsOf(m.email):'👤');
+          const pending = m.status!=='accepted';
+          return `<span style="width:16px;height:16px;border-radius:50%;background:${pending?'var(--s1)':'#8b5cf6'};color:${pending?'var(--tm)':'#fff'};border:1.5px solid var(--s2);font-size:8px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-left:-5px;flex-shrink:0;">${label}</span>`;
+        }).join('');
+        return `<div data-sharedrow="${id}" style="display:flex;align-items:center;gap:6px;border-left:2px solid #8b5cf6;padding-left:6px;">
+        <button data-shareddone="${id}" type="button" ${canEdit?'':'disabled'} style="width:16px;height:16px;border-radius:4px;border:1.5px solid ${d.completed?'#8b5cf6':'var(--border2)'};background:${d.completed?'#8b5cf6':'var(--s1)'};cursor:${canEdit?'pointer':'default'};flex-shrink:0;padding:0;font-size:10px;color:#fff;display:flex;align-items:center;justify-content:center;opacity:${canEdit?'1':'.5'};">${d.completed?'✓':''}</button>
+        <span style="font-size:12px;flex:1;min-width:0;color:var(--t1);">${d.name}</span>
+        <div style="display:flex;flex-shrink:0;">${avatars}</div>
       </div>`;
       }).join('')}
     </div>`:''}
@@ -878,7 +898,8 @@ function qBuild(qid){
     const s=sharedTasks[id];
     const myUid=auth.currentUser?.uid;
     const me=s&&s.members&&myUid?s.members[myUid]:null;
-    return s&&s.data&&s.members&&me&&me.status==='accepted'&&!s.data.completed&&Q(s.data)===qid;
+    const hasLocalParent=s&&s.data&&s.data.parentTaskId&&tasks.some(t=>t.id===s.data.parentTaskId);
+    return s&&s.data&&s.members&&me&&me.status==='accepted'&&!s.data.completed&&Q(s.data)===qid&&!hasLocalParent;
   });
   if(sharedIds.length){
     html += `<p style="font-size:11px;font-weight:600;color:#8b5cf6;margin:10px 0 6px;">👥 Compartidas</p>`;
