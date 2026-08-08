@@ -1095,7 +1095,14 @@ function startWatchingSharedTask(taskId){
   const membersRef=ref(db, `sharedTasks/${taskId}/members`);
   const metaRef=ref(db, `sharedTasks/${taskId}/meta`);
   sharedTasks[taskId]={data:null,members:null,meta:null};
-  const errHandler=(label)=>(err)=>console.error(`Error leyendo ${label} de sharedTasks/${taskId}:`, err.message);
+  const errHandler=(label)=>(err)=>{
+    console.error(`Error leyendo ${label} de sharedTasks/${taskId}:`, err.message);
+    // Probablemente la tarea ya no existe (fue eliminada) — limpiamos la referencia obsoleta
+    // en vez de seguir intentando leerla cada vez que se carga la app.
+    const myUid=auth.currentUser?.uid;
+    if(myUid) update(ref(db, `users/${myUid}/agenda/sharedTaskIds`), { [taskId]: null }).catch(()=>{});
+    stopWatchingSharedTask(taskId);
+  };
   const dataLis=onValue(dataRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].data=s.val(); render();} }, errHandler('data'));
   const membersLis=onValue(membersRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].members=s.val(); render();} }, errHandler('members'));
   const metaLis=onValue(metaRef, s=>{ if(sharedTasks[taskId]){sharedTasks[taskId].meta=s.val(); render();} }, errHandler('meta'));
