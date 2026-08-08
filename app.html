@@ -458,7 +458,9 @@ const DELETE_SHARED_TASK_URL = 'https://delete-shared-task-958800466783.southame
 async function claimPendingInvitesOnLogin(){
   try{
     const idToken = await auth.currentUser.getIdToken();
-    await fetch(CLAIM_INVITES_URL, { method:'POST', headers:{ 'Authorization': `Bearer ${idToken}` } });
+    const res=await fetch(CLAIM_INVITES_URL, { method:'POST', headers:{ 'Authorization': `Bearer ${idToken}` } });
+    const data=await res.json();
+    if(!res.ok || data.error) console.error('claim-pending-invites respondió con error:', data.error||res.status);
   }catch(err){ console.error('No se pudieron reclamar invitaciones pendientes:', err); }
 }
 
@@ -469,11 +471,13 @@ async function handleJoinLink(){
   const perm=params.get('perm')==='view'?'view':'edit';
   try{
     const idToken=await auth.currentUser.getIdToken();
-    await fetch(RESPOND_INVITE_URL, {
+    const res=await fetch(RESPOND_INVITE_URL, {
       method:'POST',
       headers:{ 'Authorization':`Bearer ${idToken}`, 'Content-Type':'application/json' },
       body: JSON.stringify({ taskId, permission:perm }) // sin "accept" → solo se registra como pendiente
     });
+    const data=await res.json();
+    if(!res.ok || data.error) console.error('respond-to-invite (join link) respondió con error:', data.error||res.status);
   }catch(err){
     console.error('No se pudo procesar el link de invitación:', err);
   }
@@ -1037,16 +1041,18 @@ document.getElementById('pending-invites').addEventListener('click', async e=>{
   btn.disabled=true; btn.textContent='...';
   try{
     const idToken=await auth.currentUser.getIdToken();
-    await fetch(RESPOND_INVITE_URL, {
+    const res=await fetch(RESPOND_INVITE_URL, {
       method:'POST',
       headers:{ 'Authorization':`Bearer ${idToken}`, 'Content-Type':'application/json' },
       body: JSON.stringify({ taskId, accept })
     });
+    const data=await res.json();
+    if(!res.ok || data.error) throw new Error(data.error || `Error ${res.status}`);
     if(!accept) stopWatchingSharedTask(taskId);
     render();
   }catch(err){
-    console.error(err);
-    alert('No se pudo procesar la invitación. Intenta de nuevo.');
+    console.error('Error en respond-to-invite:', err);
+    alert('No se pudo procesar la invitación: '+err.message);
     btn.disabled=false; btn.textContent=accept?'Aceptar':'Rechazar';
   }
 });
