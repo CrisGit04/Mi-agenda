@@ -812,7 +812,6 @@ function tCard(t){
           <input data-subdue="${t.id}|${s.id}" type="date" value="${s.due||''}" style="position:absolute;inset:0;width:100%;height:100%;border:none;background:transparent;font-size:11px;padding:0;cursor:pointer;${s.due?(sal?'color:var(--danger);font-weight:600;':'color:var(--tm);'):'color:transparent;'}">
           ${!s.due?`<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:13px;opacity:.55;">📅</span>`:''}
         </div>
-        <button data-subshare="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;" title="Compartir">👥</button>
         <button data-subshare="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;" title="Compartir esta subtarea">👥</button>
         <button data-subedit="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✎</button>
         <button data-subdel="${t.id}|${s.id}" type="button" class="ib" style="width:18px;height:18px;font-size:10px;flex-shrink:0;">✕</button>
