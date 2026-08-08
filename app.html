@@ -580,11 +580,15 @@ function renderRecentChips(containerId, list, inputId){
     });
   });
 }
-function saveShareContact(type, value){
+async function saveShareContact(type, value){
   const list = type==='email' ? shareContacts.emails : shareContacts.phones;
   const filtered=[value, ...list.filter(v=>v!==value)].slice(0,8);
   if(type==='email') shareContacts.emails=filtered; else shareContacts.phones=filtered;
-  update(ref(db, `users/${auth.currentUser.uid}/agenda/shareContacts`), { emails:shareContacts.emails, phones:shareContacts.phones });
+  try{
+    await update(ref(db, `users/${auth.currentUser.uid}/agenda/shareContacts`), { emails:shareContacts.emails, phones:shareContacts.phones });
+  }catch(err){
+    console.error('Error guardando contacto reciente:', err.message);
+  }
 }
 
 document.getElementById('share-via-email').addEventListener('click', ()=>{
