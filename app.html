@@ -357,8 +357,15 @@ html[data-theme="dark"] .cat-proyecto{background:#633806;color:#FAC775;}
     </div>
 
     <div id="share-email-block" style="display:none;flex-direction:column;gap:6px;">
+      <div id="share-email-recent" class="chip-row"></div>
       <input id="share-email-input" type="email" placeholder="Correo de la persona">
       <button id="share-email-send" type="button">Enviar invitación</button>
+    </div>
+
+    <div id="share-whatsapp-block" style="display:none;flex-direction:column;gap:6px;">
+      <div id="share-whatsapp-recent" class="chip-row"></div>
+      <input id="share-whatsapp-input" type="tel" placeholder="Número de WhatsApp (ej: +56912345678)">
+      <button id="share-whatsapp-send" type="button">Compartir por WhatsApp</button>
     </div>
 
     <div id="share-actions" style="display:flex;flex-direction:column;gap:8px;">
@@ -511,6 +518,7 @@ async function handleJoinLink(){
 
 // ── Compartir tarea ──
 let sharingCtx=null; // {type:'task', taskId} | {type:'subtask', parentTaskId, subId}
+let shareContacts={emails:[], phones:[]};
 let sharingPerm='edit';
 
 function openShareModal(taskId){
@@ -521,8 +529,10 @@ function openShareModal(taskId){
   document.getElementById('share-perm-edit').classList.add('active');
   document.getElementById('share-perm-view').classList.remove('active');
   document.getElementById('share-email-block').style.display='none';
+  document.getElementById('share-whatsapp-block').style.display='none';
   document.getElementById('share-actions').style.display='flex';
   document.getElementById('share-email-input').value='';
+  document.getElementById('share-whatsapp-input').value='';
   document.getElementById('share-status').textContent='';
   document.getElementById('sharemodal').style.display='flex';
 }
@@ -535,8 +545,10 @@ function openShareSubtaskModal(parentTaskId, subId){
   document.getElementById('share-perm-edit').classList.add('active');
   document.getElementById('share-perm-view').classList.remove('active');
   document.getElementById('share-email-block').style.display='none';
+  document.getElementById('share-whatsapp-block').style.display='none';
   document.getElementById('share-actions').style.display='flex';
   document.getElementById('share-email-input').value='';
+  document.getElementById('share-whatsapp-input').value='';
   document.getElementById('share-status').textContent='';
   document.getElementById('sharemodal').style.display='flex';
 }
@@ -558,10 +570,36 @@ document.getElementById('share-perm-view').addEventListener('click', ()=>{
   document.getElementById('share-perm-view').classList.add('active');
   document.getElementById('share-perm-edit').classList.remove('active');
 });
+function renderRecentChips(containerId, list, inputId){
+  const el=document.getElementById(containerId);
+  if(!list||!list.length){ el.innerHTML=''; return; }
+  el.innerHTML=list.map(v=>`<button type="button" class="chip" data-fillvalue="${v}">${v}</button>`).join('');
+  el.querySelectorAll('[data-fillvalue]').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.getElementById(inputId).value=chip.getAttribute('data-fillvalue');
+    });
+  });
+}
+function saveShareContact(type, value){
+  const list = type==='email' ? shareContacts.emails : shareContacts.phones;
+  const filtered=[value, ...list.filter(v=>v!==value)].slice(0,8);
+  if(type==='email') shareContacts.emails=filtered; else shareContacts.phones=filtered;
+  update(ref(db, `users/${auth.currentUser.uid}/agenda/shareContacts`), { emails:shareContacts.emails, phones:shareContacts.phones });
+}
+
 document.getElementById('share-via-email').addEventListener('click', ()=>{
   document.getElementById('share-email-block').style.display='flex';
+  document.getElementById('share-whatsapp-block').style.display='none';
   document.getElementById('share-actions').style.display='none';
+  renderRecentChips('share-email-recent', shareContacts.emails, 'share-email-input');
   document.getElementById('share-email-input').focus();
+});
+document.getElementById('share-via-whatsapp').addEventListener('click', ()=>{
+  document.getElementById('share-whatsapp-block').style.display='flex';
+  document.getElementById('share-email-block').style.display='none';
+  document.getElementById('share-actions').style.display='none';
+  renderRecentChips('share-whatsapp-recent', shareContacts.phones, 'share-whatsapp-input');
+  document.getElementById('share-whatsapp-input').focus();
 });
 
 // Arma el payload a compartir según el contexto (tarea normal, instancia recurrente, o subtarea)
@@ -609,6 +647,7 @@ document.getElementById('share-email-send').addEventListener('click', async ()=>
     const data=await res.json();
     if(!res.ok || data.error) throw new Error(data.error||'No se pudo compartir');
     document.getElementById('share-status').textContent=`✅ Invitación enviada a ${email}`;
+    saveShareContact('email', email);
     removeLocalAfterShare();
     setTimeout(closeShareModal, 1800);
   }catch(err){
@@ -619,9 +658,12 @@ document.getElementById('share-email-send').addEventListener('click', async ()=>
   }
 });
 
-document.getElementById('share-via-whatsapp').addEventListener('click', async ()=>{
+document.getElementById('share-whatsapp-send').addEventListener('click', async ()=>{
+  const phoneRaw=(document.getElementById('share-whatsapp-input').value||'').trim();
+  const phone=phoneRaw.replace(/[^\d+]/g,'');
+  if(!phone){ alert('Ingresa un número de WhatsApp.'); return; }
   const task=sharePayloadForCtx(); if(!task) return;
-  const btn=document.getElementById('share-via-whatsapp');
+  const btn=document.getElementById('share-whatsapp-send');
   btn.disabled=true; btn.textContent='Generando link...';
   try{
     const idToken=await auth.currentUser.getIdToken();
@@ -633,14 +675,16 @@ document.getElementById('share-via-whatsapp').addEventListener('click', async ()
     const data=await res.json();
     if(!res.ok || data.error || !data.joinLink) throw new Error(data.error||'No se pudo generar el link');
     const msg=encodeURIComponent(`Te compartí "${task.name}" en Planwik: ${data.joinLink}`);
-    window.open(`https://wa.me/?text=${msg}`, '_blank');
+    const numClean=phone.replace(/^\+/,'');
+    window.open(`https://wa.me/${numClean}?text=${msg}`, '_blank');
+    saveShareContact('phone', phoneRaw);
     removeLocalAfterShare();
     closeShareModal();
   }catch(err){
     console.error(err);
     document.getElementById('share-status').textContent='❌ No se pudo generar el link. Intenta de nuevo.';
   }finally{
-    btn.disabled=false; btn.textContent='💬 Compartir por WhatsApp';
+    btn.disabled=false; btn.textContent='Compartir por WhatsApp';
   }
 });
 
@@ -1688,6 +1732,7 @@ onAuthStateChanged(auth,user=>{
         proAccessUntil=data.proAccessUntil||0;
         flowCustomerId=data.flowCustomerId||null;
         flowSubscriptionId=data.flowSubscriptionId||null;
+        shareContacts=data.shareContacts||{emails:[], phones:[]};
         sharedRecMarkers=data.sharedRecMarkers||[];
         if(data.householdId !== householdId){
           householdId=data.householdId||null;
